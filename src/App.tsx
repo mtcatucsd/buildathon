@@ -11,12 +11,20 @@ import BeyondTheBubble from "./screens/BeyondTheBubble";
 import TheDay from "./screens/TheDay";
 import TheReward from "./screens/TheReward";
 import Epilogue from "./screens/Epilogue";
-import Flyer, { type FlyerFormat } from "./flyer/Flyer";
+import { lazy, Suspense } from "react";
+
+// The flyer (and its WebGL background) only loads for ?flyer=… so the site bundle stays light.
+const Flyer = lazy(() => import("./flyer/Flyer"));
 import { trackChapters } from "./data/story";
 
 function App() {
   const flyer = new URLSearchParams(location.search).get("flyer");
-  if (flyer === "post" || flyer === "story") return <Flyer format={flyer as FlyerFormat} />;
+  if (flyer === "post" || flyer === "story")
+    return (
+      <Suspense fallback={null}>
+        <Flyer format={flyer} />
+      </Suspense>
+    );
 
   return (
     <>

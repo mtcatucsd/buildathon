@@ -56,14 +56,14 @@ const HAND: Prim[] = (() => {
   // Aimed almost straight at the viewer's eye (a touch down and left), so the shaft stays short
   // and the tip swells: the foreshortened point of a recruiting poster.
   const K: V3 = [-0.03, 0.08, 0.06];
-  const aim: V3 = [-0.3, -0.16, 1.15];
+  const aim: V3 = [-0.035, -0.05, 0.82];
   const along = (z: number): V3 => {
     const s = (z - K[2]) / (aim[2] - K[2]);
     return [K[0] + (aim[0] - K[0]) * s, K[1] + (aim[1] - K[1]) * s, z];
   };
-  p.push({ kind: "capsule", id: id++, a: K, b: along(0.2), ra: 0.05, rb: 0.047, mat: "skin" });
-  p.push({ kind: "capsule", id: id++, a: along(0.2), b: along(0.33), ra: 0.047, rb: 0.043, mat: "skin" });
-  p.push({ kind: "capsule", id: id++, a: along(0.33), b: along(0.44), ra: 0.043, rb: 0.04, mat: "skin" });
+  p.push({ kind: "capsule", id: id++, a: K, b: along(0.22), ra: 0.048, rb: 0.045, mat: "skin" });
+  p.push({ kind: "capsule", id: id++, a: along(0.22), b: along(0.36), ra: 0.045, rb: 0.042, mat: "skin" });
+  p.push({ kind: "capsule", id: id++, a: along(0.36), b: along(0.48), ra: 0.042, rb: 0.04, mat: "skin" });
   return p;
 })();
 const TIP_ID = HAND[HAND.length - 1].id;
@@ -77,7 +77,7 @@ const LIGHT: V3 = (() => {
 })();
 
 // Perspective: things nearer the viewer (larger z) appear bigger. The eye sits at z = EYE.
-const EYE = 1.15;
+const EYE = 0.82;
 
 // Every capsule becomes a chain of spheres; perspective is applied per sphere, which is what makes
 // a finger pointing straight out read as foreshortened.
@@ -136,7 +136,7 @@ type Geo = { ox: number; oy: number; unit: number };
 
 function paint(_ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   const unit = Math.min(w * 1.25, h * 1.05);
-  return { ox: w * 0.6, oy: h * 0.42, unit };
+  return { ox: w * 0.58, oy: h * 0.45, unit: unit * 0.8 };
 }
 
 // Shading is cached per layout and per (quantised) push, since the hand only moves with scroll.
@@ -173,7 +173,9 @@ function handCells(f: Frame<Geo>) {
       const nail = best.id === TIP_ID && best.t > 0.5 && best.n[1] > 0.35 && best.n[0] < 0.3 && best.n[2] > 0.25;
       // Joint creases where a finger segment begins.
       const joint = best.mat === "skin" && best.t > 0.01 && best.t < 0.07 && (INDEX_IDS.has(best.id) || best.id > 8);
-      const light = Math.min(1, 0.06 + Math.pow(lambert, 1.3) * 0.88 + Math.max(0, best.n[2]) * 0.06);
+      // Depth cue: nearer forms are brighter, so the fingertip leads and the arm falls back.
+      const near = Math.max(0, Math.min(1, (best.z + 0.3) / 0.78));
+      const light = Math.min(1, (0.06 + Math.pow(lambert, 1.2) * 0.88 + Math.max(0, best.n[2]) * 0.08) * (0.45 + near * 0.75));
       ids[r * cols + c] = best.id;
       zs[r * cols + c] = best.z;
       cells[r * cols + c] = { id: best.id, light, mat: best.mat, edge: 0, nail, joint };
