@@ -947,3 +947,21 @@ body {
     padding: 0.28rem 0;
   }
 }
+
+/* Phones: keep the three partner logos on one row, like the web version, scaled to fit. */
+@media (max-width: 900px) {
+  .partners {
+    flex-wrap: nowrap;
+    gap: clamp(1rem, 5vw, 1.75rem);
+    margin: 3.5rem 0 2.5rem;
+  }
+  .partners-manara {
+    height: clamp(24px, 8vw, 32px);
+  }
+  .partners-replit {
+    height: clamp(26px, 8.5vw, 34px);
+  }
+  .partners-mtc {
+    height: clamp(38px, 12vw, 50px);
+  }
+}
