@@ -1,0 +1,55 @@
+@font-face {
+  font-family: "Diatype";
+  src: url("/brand/fonts/diatype-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diatype Semi-Mono";
+  src: url("/brand/fonts/diatype-semi-mono.woff2") format("woff2");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* Buildathon palette: light in the dark */
+  --off-black: #100d14; /* ink */
+  --dark-gray: #2a2630;
+  --medium-gray: #8a8494; /* static */
+  --off-white: #f3efe6;
+  --orange: #ff5a1f; /* ember */
+  --light-orange: #ff7d4d;
+  --gold: #ffb23f; /* lamplight */
+  --yellow: #ffd27a;
+
+  --mono: "Diatype Semi-Mono", ui-monospace, SFMono-Regular, monospace;
+  --sans: "Diatype", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  color-scheme: dark;
+  background: var(--off-black);
+  color: var(--off-white);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--orange);
+  color: var(--off-white);
+}
