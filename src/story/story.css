@@ -205,14 +205,10 @@ body {
 .gold {
   color: var(--gold);
 }
-/* Illuminated first letter. */
+/* Illuminated first letter: gold italic, kept inline so long lines never wrap around it. */
 .dropcap::first-letter {
-  float: left;
   font-family: var(--serif);
   font-style: italic;
-  font-size: 3.1em;
-  line-height: 0.8;
-  margin: 0.06em 0.08em 0 -0.04em;
   color: var(--gold);
 }
 .algorithm {
@@ -345,7 +341,7 @@ body {
 .track-copy {
   max-width: 34rem;
 }
-.track-path {
+.track-path-unused {
   font-family: var(--mono);
   font-size: 0.85rem;
   color: var(--gold);
@@ -719,7 +715,15 @@ body {
 
 /* ---------- beyond the bubble / epilogue ---------- */
 .stage-art-right-wide {
-  inset: 4rem 0 1rem 34%;
+  inset: 4rem 1rem 1rem 50%;
+}
+.stage-copy-narrow {
+  width: min(30rem, 30vw);
+}
+.bubble-scene {
+  position: relative;
+  width: 100%;
+  height: 100%;
 }
 .track-rule {
   margin: 1.25rem 0 0;
@@ -781,9 +785,6 @@ body {
   .definition {
     font-size: 1rem;
     margin-bottom: 0.75rem;
-  }
-  .dropcap::first-letter {
-    font-size: 2.4em;
   }
   /* The hero sunset fills the top ~60% so its glyphs match the laptop's size, fading into the page. */
   /* The whole sunset, full width, at its own aspect ratio, just under the top bar. */
@@ -870,7 +871,7 @@ body {
     order: -1;
   }
   .stage-art-right-wide {
-    inset: 3.5rem 0 45% 0;
+    inset: 3.5rem 0 38% 0;
   }
   .day-trophy {
     height: 22vh !important;
@@ -963,5 +964,199 @@ body {
   }
   .partners-mtc {
     height: clamp(38px, 12vw, 50px);
+  }
+}
+
+.ascii-heart {
+  color: var(--orange);
+  font-weight: 600;
+  letter-spacing: 0;
+  animation: beat 1.6s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes beat {
+  0%, 60%, 100% { transform: scale(1); }
+  30% { transform: scale(1.18); }
+}
+
+/* Even line lengths: balanced headings, no lone last words in paragraphs. */
+h1, h2, h3, .serif-xl, .serif-lg, .track-subtitle, .track-hook {
+  text-wrap: balance;
+}
+p, li {
+  text-wrap: pretty;
+}
+.track-subtitle {
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  line-height: 1.2;
+  color: rgba(243, 239, 230, 0.78);
+  margin: 0.4rem 0 0;
+}
+@media (max-width: 900px) {
+  .track-subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+/* Phones: the three prizes as a compact podium row instead of three tall stacked blocks. */
+@media (max-width: 900px) {
+  .prizes {
+    grid-template-columns: 1.25fr 1fr 1fr !important;
+    gap: 0.5rem;
+    margin: 2rem 0;
+  }
+  .prize {
+    min-height: 6.5rem;
+    padding: 0.85rem;
+  }
+  .prize-1 {
+    min-height: 8rem;
+  }
+  .prize-amount {
+    font-size: 2rem;
+  }
+}
+
+/* Phones / portrait: every animated chapter is full-bleed, like the laptop. The scenes compose their
+   subject in the upper area (see stageFrame.ts) and the text panel overlays the bottom. */
+@media (max-width: 900px) {
+  .stage-art-scene,
+  .stage-art-right-wide {
+    inset: 0;
+  }
+  .track {
+    display: block;
+    padding: 0;
+  }
+  .track-art {
+    position: absolute;
+    inset: 0;
+    height: 100% !important;
+  }
+  .track-copy {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1.25rem;
+    max-width: none;
+    padding: 1.1rem 1.15rem;
+    background: rgba(16, 13, 20, 0.86);
+    border: 1px solid rgba(243, 239, 230, 0.08);
+    border-radius: 4px;
+  }
+  .track-copy .eyebrow {
+    margin-bottom: 0.5rem;
+  }
+  .track-path-unused {
+    margin-bottom: 0.4rem;
+  }
+}
+
+/* ---------- menu sheet ---------- */
+.topbar-menu {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  margin-left: 0.5rem;
+  border: 1px solid rgba(243, 239, 230, 0.25);
+  border-radius: 2px;
+  background: rgba(16, 13, 20, 0.5);
+  color: var(--off-white);
+  cursor: pointer;
+}
+.topbar-menu:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.menu-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(8, 6, 10, 0.55);
+}
+.menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  width: min(440px, 100vw);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.75rem 1.75rem;
+  overflow-y: auto;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.35);
+}
+.menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+.menu-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 2rem;
+  color: var(--ink);
+}
+.menu-close {
+  display: inline-flex;
+  padding: 0.4rem;
+  border: none;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+.menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.menu-list li {
+  border-bottom: 1px solid rgba(16, 13, 20, 0.14);
+}
+.menu-list a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.05rem 0;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  line-height: 1.1;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.2s, padding-left 0.2s;
+}
+.menu-list a:hover {
+  color: var(--orange);
+  padding-left: 0.4rem;
+}
+.menu-num {
+  font-family: var(--arabic);
+  font-size: 1.1rem;
+  color: rgba(16, 13, 20, 0.4);
+}
+.menu-foot {
+  margin: auto 0 0;
+  padding-top: 2rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: rgba(16, 13, 20, 0.6);
+}
+@media (max-width: 900px) {
+  .topbar-cta {
+    margin-left: auto;
+  }
+  .menu-list a {
+    font-size: 1.55rem;
+    padding: 0.9rem 0;
   }
 }

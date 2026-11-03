@@ -15,3 +15,9 @@ export function scrollToId(id: string) {
   if (lenis) lenis.scrollTo(el, { duration: 1.6 });
   else el.scrollIntoView({ behavior: "smooth" });
 }
+
+// Freeze page scrolling while an overlay (the menu) is open.
+export function lockScroll(locked: boolean) {
+  if (lenis) (locked ? lenis.stop() : lenis.start());
+  document.documentElement.style.overflow = locked ? "hidden" : "";
+}

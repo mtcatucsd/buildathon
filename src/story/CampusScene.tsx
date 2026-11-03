@@ -1,4 +1,5 @@
 import type { MotionValue } from "motion/react";
+import { stageFrame } from "./stageFrame";
 import AsciiScene, { region, type Cell, type Frame, type Shaded } from "./AsciiScene";
 
 // Bridging Campuses: an ASCII map of California. Community colleges (ember) and universities (lamplight)
@@ -62,9 +63,10 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   const k = Math.cos((37 * Math.PI) / 180);
   const bw = (lonMax - lonMin) * k;
   const bh = latMax - latMin;
-  const scale = Math.min((w * 0.92) / bw, (h * 0.92) / bh);
+  const fr = stageFrame(w, h);
+  const scale = Math.min((w * 0.92) / bw, (fr.h * 0.92) / bh);
   const ox = (w - bw * scale) / 2;
-  const oy = (h - bh * scale) / 2;
+  const oy = fr.top + (fr.h - bh * scale) / 2;
   const project = (lon: number, lat: number) => ({ x: ox + (lon - lonMin) * k * scale, y: oy + (latMax - lat) * scale });
 
   ctx.fillStyle = region(R.LAND);

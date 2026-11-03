@@ -1,13 +1,18 @@
 import type { MotionValue } from "motion/react";
 import AsciiScene, { region, type Cell, type Frame, type Shaded } from "./AsciiScene";
 import { rng } from "./rng";
+import { stageFrame } from "./stageFrame";
 
-// Beyond the Bubble: a team working inside a glass bubble, two judges waiting outside.
+// Beyond the Bubble: a team working inside a glass bubble, ideas bouncing off the inside of the glass.
+// Three judges wait outside: two from Manara West (left) and one from MTC (right), each tagged.
 // `power`: 0–0.38 intact (iridescent glass, rim light, window reflection) · 0.38–0.6 cracks spread
-// · 0.6–1 the bubble shatters into shards and conversation reaches the judges.
+// · 0.6–1 the bubble shatters, the ideas fly out to the judges and conversation lines connect them.
 // People and furniture are a stencil; the glass, cracks and shards are computed per cell.
 
-const R = { SKY: 0, FLOOR: 1, TABLE: 2, LAPTOP: 3, SCREEN: 4, PERSON: 5, FACE: 6, JUDGE: 7, CLIPBOARD: 8 };
+const R = { SKY: 0, FLOOR: 1, TABLE: 2, LAPTOP: 3, SCREEN: 4, PERSON: 5, FACE: 6, JUDGE: 7, CLIPBOARD: 8, JHEAD: 9 };
+// Skin tones and shirt colours, varied per person.
+const SKIN = ["222,170,128", "190,128,90", "146,96,66", "206,150,110"];
+const SHIRTS = ["255,90,31", "86,140,210", "110,176,120"];
 
 const CREAM = "243,239,230";
 const LAMP = "255,178,63";
@@ -17,37 +22,47 @@ const VIOLET = "150,120,230";
 const CYAN = "110,200,230";
 const INK = "16,13,20";
 const SHADOW = "26,22,32";
+// Judge organisations, in their brand colours.
+const ORGS = {
+  manara: { rgb: "183,80,186" },
+  mtc: { rgb: "239,194,91" },
+} as const;
+type Org = keyof typeof ORGS;
+const IDEAS = "{}<>/?!*+#";
+// Statue gold: shadow → body → highlight.
+const GOLD_LO = "150,104,34";
+const GOLD = "226,170,64";
+const GOLD_HI = "255,232,160";
 
 type Shard = { ax: number; ay: number; dir: [number, number]; spin: number; speed: number };
 type Geo = {
   cx: number;
   cy: number;
   r: number;
-  judges: { x: number; y: number }[];
+  judges: { x: number; y: number; head: number; floor: number; org: Org }[];
+  ps: number;
   team: { x: number; y: number };
   cracks: [number, number][][]; // polylines in bubble units (−1..1)
   shards: Shard[];
 };
 
-function person(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, faceId: number, bodyId: number) {
-  ctx.fillStyle = region(bodyId);
+function person(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, faceId: number, bodyId: number, i = 0) {
+  ctx.fillStyle = region(bodyId, i);
   ctx.beginPath();
   ctx.ellipse(x, y + s * 0.95, s * 0.75, s * 0.6, 0, Math.PI, 0); // shoulders
   ctx.fill();
   ctx.fillRect(x - s * 0.75, y + s * 0.95, s * 1.5, s * 0.4);
   ctx.fillRect(x - s * 0.14, y + s * 0.3, s * 0.28, s * 0.35); // neck
-  ctx.fillStyle = region(faceId);
+  ctx.fillStyle = region(faceId, i);
   ctx.beginPath();
   ctx.ellipse(x, y, s * 0.36, s * 0.44, 0, 0, Math.PI * 2); // head
   ctx.fill();
 }
 
-function standing(ctx: CanvasRenderingContext2D, x: number, floor: number, s: number) {
-  ctx.fillStyle = region(R.JUDGE);
+function standing(ctx: CanvasRenderingContext2D, x: number, floor: number, s: number, i: number) {
+  ctx.fillStyle = region(R.JUDGE, i);
   const head = floor - s * 3.4;
-  ctx.beginPath();
-  ctx.ellipse(x, head, s * 0.32, s * 0.4, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillRect(x - s * 0.13, head + s * 0.25, s * 0.26, s * 0.55); // neck
   ctx.beginPath();
   ctx.moveTo(x - s * 0.62, head + s * 0.75);
   ctx.quadraticCurveTo(x, head + s * 0.45, x + s * 0.62, head + s * 0.75);
@@ -56,16 +71,46 @@ function standing(ctx: CanvasRenderingContext2D, x: number, floor: number, s: nu
   ctx.fill();
   ctx.fillRect(x - s * 0.46, head + s * 2.2, s * 0.36, floor - head - s * 2.2); // legs
   ctx.fillRect(x + s * 0.1, head + s * 2.2, s * 0.36, floor - head - s * 2.2);
-  ctx.fillStyle = region(R.CLIPBOARD);
+  ctx.fillStyle = region(R.JHEAD, i);
+  ctx.beginPath();
+  ctx.ellipse(x, head, s * 0.32, s * 0.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = region(R.CLIPBOARD, i);
   ctx.fillRect(x - s * 0.15, head + s * 1.1, s * 0.6, s * 0.75);
 }
 
-function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
+// Shared by the canvas and the logo overlay. Wide boxes: bubble centred, two Manara judges on the
+// left, the MTC judge on the right. Tall boxes (phones): a bigger bubble up top, judges in a row below.
+export function layout(w: number, h: number) {
+  const portrait = w / h < 1.15;
+  // Tall boxes: compose within the upper subject area; the floor carries on below it.
+  const fr = stageFrame(w, h);
+  const ah = fr.tall ? fr.h : h;
+  const at = fr.tall ? fr.top : 0;
+  const r = portrait ? Math.min(w * 0.36, ah * 0.32) : Math.min(w * 0.24, h * 0.34);
   const cx = w / 2;
-  const cy = h * 0.47;
-  const r = Math.min(w * 0.26, h * 0.34);
+  const cy = portrait ? at + r + ah * 0.04 : h * 0.47;
   const floor = cy + r * 0.98;
-  const ps = r * 0.13;
+  const ps = r * 0.17;
+  const js = ps * (portrait ? 1.15 : 1.0);
+  const judgeFloor = portrait ? at + ah * 0.99 : floor;
+  const spots: [number, Org][] = portrait
+    ? [
+        [-0.95, "manara"],
+        [0, "mtc"],
+        [0.95, "manara"],
+      ]
+    : [
+        [-1.85, "manara"],
+        [-1.38, "manara"],
+        [1.6, "mtc"],
+      ];
+  const judges = spots.map(([k, org]) => ({ x: cx + r * k, y: judgeFloor - js * 3.4, head: judgeFloor - js * 3.4, floor: judgeFloor, org }));
+  return { portrait, cx, cy, r, floor, ps, js, judges };
+}
+
+function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
+  const { cx, cy, r, floor, ps, js, judges } = layout(w, h);
   const rand = rng(5);
 
   ctx.fillStyle = region(R.FLOOR);
@@ -73,7 +118,7 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
 
   // The team: three people behind a table, laptops open in front of them.
   const tableY = cy + r * 0.45;
-  [-1, 0, 1].forEach((k) => person(ctx, cx + k * ps * 2.3, tableY - ps * 1.15 + Math.abs(k) * ps * 0.15, ps, R.FACE, R.PERSON));
+  [-1, 0, 1].forEach((k, i) => person(ctx, cx + k * ps * 2.3, tableY - ps * 1.15 + Math.abs(k) * ps * 0.15, ps, R.FACE, R.PERSON, i));
   ctx.fillStyle = region(R.TABLE);
   ctx.fillRect(cx - r * 0.62, tableY, r * 1.24, ps * 0.32);
   ctx.fillRect(cx - r * 0.55, tableY + ps * 0.32, ps * 0.22, floor - tableY - ps * 0.32);
@@ -93,9 +138,8 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
     ctx.fill();
   });
 
-  // Two judges standing outside, left and right.
-  const judges = [cx - r * 1.45, cx + r * 1.45].map((x) => ({ x, y: floor - ps * 3.4 * 1.15 }));
-  judges.forEach((j) => standing(ctx, j.x, floor, ps * 1.15));
+  // Three judges outside: two from Manara West, one from MTC.
+  judges.forEach((j, i) => standing(ctx, j.x, j.floor, js, i));
 
   // Cracks: branching polylines from an impact point, in bubble units.
   const cracks: [number, number][][] = [];
@@ -131,7 +175,7 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
     shards.push({ ax, ay, dir: [(ax - impact[0] * 0.3) / d, (ay - impact[1] * 0.3) / d], spin: (rand() - 0.5) * 2, speed: 0.7 + rand() * 0.9 });
   }
 
-  return { cx, cy, r, judges, team: { x: cx, y: tableY - ps * 1.15 }, cracks, shards };
+  return { cx, cy, r, judges, ps: js, team: { x: cx, y: tableY - ps * 1.15 }, cracks, shards };
 }
 
 const mix = (a: string, b: string, t: number) => {
@@ -162,6 +206,8 @@ function glass(u: number, v: number, t: number, shatter: number): Shaded {
   const rgb = film(Math.atan2(v, u) / (Math.PI * 2) + fres * 1.6 + t * 0.05);
   if (fres > 0.42) {
     const a = Math.atan2(v, u);
+    // Specular rim: a bright arc along the upper left where the light catches the glass.
+    if (a < -1.75 && a > -2.9 && fres > 0.6) return [Math.abs(Math.cos(a)) > 0.7 ? "(" : "-", CREAM, 0.95];
     const glyph = Math.abs(Math.cos(a)) > 0.92 ? "|" : Math.abs(Math.sin(a)) > 0.92 ? "-" : Math.cos(a) * Math.sin(a) > 0 ? "\\" : "/";
     return [glyph, rgb, 0.55 + fres * 0.45];
   }
@@ -206,10 +252,10 @@ function talkMap(f: Frame<Geo>, talk: number) {
     const sx = g.team.x;
     const sy = g.team.y - g.r * 0.15;
     const ex = j.x;
-    const ey = j.y - g.r * 0.05;
+    const ey = j.head - g.ps * 0.9; // end just above the head, not on it
     const mx = (sx + ex) / 2;
-    const my = Math.min(sy, ey) - g.r * 0.55;
-    const pos = (t * 0.5 + ji * 0.5) % 1;
+    const my = Math.min(sy, ey) - g.r * (0.45 + ji * 0.12);
+    const pos = (t * 0.5 + ji / 3) % 1;
     for (let k = 0; k <= 80 * talk; k++) {
       const s = k / 80;
       const x = (1 - s) * (1 - s) * sx + 2 * (1 - s) * s * mx + s * s * ex;
@@ -223,6 +269,41 @@ function talkMap(f: Frame<Geo>, talk: number) {
   }
   talkCache = { t: f.t, cols, map };
   return talkCache.map;
+}
+
+// Ideas: glyphs bouncing around inside the bubble; when it shatters they fly out to the judges.
+// Rasterised once per frame into a per-cell map (value: index of the idea glyph + 1).
+let ideaCache = { t: -1, cols: 0, map: new Uint8Array(0) };
+function ideaMap(f: Frame<Geo>, shatter: number) {
+  if (ideaCache.t === f.t && ideaCache.cols === f.cols) return ideaCache.map;
+  const { geo: g, t, cols, rows } = f;
+  const map = new Uint8Array(cols * rows);
+  const cw = f.w / cols;
+  const ch = f.h / rows;
+  for (let i = 0; i < 18; i++) {
+    // Inside: a Lissajous drift that stays within the glass, above the table.
+    const a = 0.45 + (i % 5) * 0.13;
+    const b = 0.37 + (i % 7) * 0.11;
+    const iu = Math.sin(t * a + i * 1.7) * 0.68;
+    const iv = -0.18 + Math.cos(t * b + i * 2.3) * 0.45;
+    let x = g.cx + iu * g.r;
+    let y = g.cy + iv * g.r;
+    if (shatter > 0) {
+      // Out: each idea heads for one of the judges, arriving as the bubble finishes breaking.
+      const j = g.judges[i % g.judges.length];
+      const k = Math.min(1, shatter * (1.1 + (i % 4) * 0.15));
+      const e = k * k * (3 - 2 * k);
+      x += (j.x - x) * e;
+      y += (j.head - g.ps * 0.9 - y) * e - Math.sin(e * Math.PI) * g.r * 0.35;
+      if (k >= 1) continue; // delivered
+    }
+    const col = Math.floor(x / cw);
+    const row = Math.floor(y / ch);
+    if (col < 0 || row < 0 || col >= cols || row >= rows) continue;
+    map[row * cols + col] = (i % IDEAS.length) + 1;
+  }
+  ideaCache = { t: f.t, cols, map };
+  return map;
 }
 
 let crackCache = { key: "", map: new Float32Array(0) };
@@ -263,6 +344,22 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
   const u = (c.x - g.cx) / g.r;
   const v = (c.y - g.cy) / g.r;
 
+  // Ideas in flight (drawn over the glass).
+  const idea = ideaMap(f, shatter)[c.row * f.cols + c.col];
+  if (idea) return [IDEAS[idea - 1], shatter > 0 ? CREAM : LAMP, 0.95];
+
+  // Speech bubbles above each judge once the talk reaches them.
+  const cw = f.w / f.cols;
+  const ch = f.h / f.rows;
+  for (const [ji, j] of g.judges.entries()) {
+    if (talk > 0.85) {
+      const text = ["( ? )", "( ! )", "( + )"][ji];
+      const sy = Math.round((c.y - (j.head - g.ps * 1.6)) / ch);
+      const sx = Math.round((c.x - j.x) / cw + 2);
+      if (sy === 0 && sx >= 0 && sx < 5) return [text[sx], CREAM, 0.95];
+    }
+  }
+
   // Glass and shards.
   if (shatter <= 0) {
     if (crack > 0 && crackMap(f, crack)[c.row * f.cols + c.col]) {
@@ -296,38 +393,51 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
   if (talk > 0) {
     const tv = talkMap(f, talk)[c.row * f.cols + c.col];
     if (tv) return [tv === 1 ? "o" : "·", tv === 1 ? CREAM : LAMP, tv === 1 ? 1 : 0.55];
-    // Speech bubble above each judge once the line arrives.
-    if (talk > 0.9) {
-      for (const [ji, j] of g.judges.entries()) {
-        const bx = Math.round((c.x - j.x) / (f.w / f.cols));
-        const by = Math.round((c.y - (j.y - g.r * 0.62)) / (f.h / f.rows));
-        const text = ji === 0 ? "( ? )" : "( ! )";
-        if (by === 0 && bx >= -2 && bx <= 2) return [text[bx + 2], CREAM, 0.95];
-      }
-    }
   }
 
   // People, furniture, floor. Faces and screens glow; bodies are rim-lit silhouettes.
   const screenGlow = 0.5 + 0.5 * Math.sin(t * 2 + c.col * 0.1);
   switch (c.region) {
-    case R.FACE:
-      return [c.seed > 0.6 ? "o" : ":", mix(STATIC, CREAM, 0.4 + screenGlow * 0.2), 0.75, SHADOW];
-    case R.PERSON:
-      if (c.up === R.SKY || c.left === R.SKY || c.right === R.SKY) return ["_", mix(STATIC, LAMP, 0.4), 0.85, SHADOW];
-      return [c.seed > 0.7 ? ":" : " ", STATIC, 0.35, SHADOW];
+    case R.FACE: {
+      // Faces lit warm by the laptop screens in front of them.
+      const skin = SKIN[c.aux % SKIN.length];
+      const edge = c.left !== R.FACE || c.right !== R.FACE || c.up !== R.FACE;
+      if (edge) return ["o", mix(skin, CREAM, 0.15), 0.9, mix(INK, skin, 0.35)];
+      return [c.down !== R.FACE ? "=" : "@", mix(skin, LAMP, screenGlow * 0.25), 0.9, mix(INK, skin, 0.55)];
+    }
+    case R.PERSON: {
+      // Solid shirts in a different colour per student, with a lit top edge.
+      const shirt = SHIRTS[c.aux % SHIRTS.length];
+      if (c.up === R.SKY || c.up === R.FACE) return ["_", mix(shirt, CREAM, 0.45), 0.95, mix(INK, shirt, 0.45)];
+      if (c.left === R.SKY || c.right === R.SKY) return [c.left === R.SKY ? "(" : ")", mix(shirt, CREAM, 0.25), 0.9, mix(INK, shirt, 0.4)];
+      return [c.seed > 0.5 ? "#" : "%", shirt, 0.7, mix(INK, shirt, 0.32)];
+    }
     case R.LAPTOP:
       return [c.up === R.SKY ? "_" : "=", mix(STATIC, CREAM, 0.3), 0.8, "36,32,44"];
     case R.SCREEN:
       return ["@", LAMP, 0.7 + screenGlow * 0.3, "60,40,30"];
     case R.TABLE:
       return ["=", mix(STATIC, LAMP, 0.25), 0.85, "40,34,40"];
-    case R.JUDGE: {
-      const lit = 0.3 + talk * 0.7;
-      if (c.up === R.SKY || c.left === R.SKY || c.right === R.SKY) return ["|", mix(STATIC, EMBER, lit), 0.9, INK];
-      return [c.seed > 0.75 ? ":" : " ", STATIC, 0.3, INK];
+    case R.JUDGE:
+    case R.JHEAD: {
+      // Gold statues, like an awards trophy: polished metal lit from the left, a dark shaded side,
+      // and a glint that sweeps across them; they shine brighter once the team is talking to them.
+      const j = g.judges[c.aux] ?? g.judges[0];
+      const u = (c.x - j.x) / (g.ps * 0.7); // −1 left edge … +1 right edge
+      const shine = Math.max(0, Math.min(1, 0.78 - u * 0.42)) * (0.75 + talk * 0.25);
+      const glint = Math.abs(((t * 0.35 + c.aux * 0.33) % 1.6) - 0.3 - (c.y - j.head) / (g.ps * 4)) < 0.05;
+            const bg = mix(GOLD_LO, GOLD, shine * 0.85);
+      if (c.left === R.SKY || c.left === R.FLOOR) return ["(", "255,246,214", 1, bg];
+      if (c.right === R.SKY || c.right === R.FLOOR) return [")", "110,72,20", 0.9, bg];
+      if (c.up === R.SKY) return ["_", "255,246,214", 1, bg];
+      // Glyphs are the polish on the metal: bright where it catches light, dark where it turns away.
+      return [glint ? "*" : shine > 0.7 ? "@" : shine > 0.45 ? "%" : "#", glint ? "255,252,236" : mix("120,80,24", GOLD_HI, shine), 0.95, bg];
     }
-    case R.CLIPBOARD:
-      return ["≡", mix(STATIC, CREAM, 0.3 + talk * 0.5), 0.9, "40,36,44"];
+    case R.CLIPBOARD: {
+      // Notes appear on the clipboard as they listen.
+      const writing = talk > 0 && (c.row + Math.floor(t * 3)) % 3 !== 0;
+      return [writing ? "~" : "=", GOLD_LO, 0.9, mix(INK, GOLD, 0.55)];
+    }
     case R.FLOOR: {
       // Reflection of the bubble on a glossy floor.
       const ref = Math.exp(-Math.abs(c.x - g.cx) / (g.r * 0.9)) * (1 - shatter * 0.7);
@@ -339,12 +449,15 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
 
 export default function BubbleScene({ power }: { power: MotionValue<number> }) {
   return (
-    <AsciiScene
-      label="A team working inside an iridescent ASCII glass bubble that cracks and shatters as conversation reaches two judges outside"
-      paint={paint}
-      shade={shade}
-      power={power}
-      cell={7} fps={24}
-    />
+    <div className="bubble-scene">
+      <AsciiScene
+        label="A team inside an iridescent ASCII glass bubble full of ideas; it shatters and the ideas reach three judges outside, two from Manara West and one from MTC"
+        paint={paint}
+        shade={shade}
+        power={power}
+        cell={7}
+        fps={24}
+      />
+    </div>
   );
 }

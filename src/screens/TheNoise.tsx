@@ -21,12 +21,16 @@ function Scene() {
               content: (
                 <>
                   <p className="eyebrow">١ · The Noise</p>
-                  <p className="serif-xl dropcap">The world got loud.</p>
+                  <p className="serif-xl dropcap">In a world filled with distractions and noise,</p>
                 </>
               ),
             },
-            { from: 0.3, to: 0.55, content: <p className="serif-lg">Endless feeds. Borrowed ideas. Screens that never sleep.</p> },
-            { from: 0.55, to: 0.78, content: <p className="serif-lg">Problems nobody in the room is solving.</p> },
+            { from: 0.3, to: 0.55, content: <p className="serif-lg">how many ideas did you scroll past today?</p> },
+            {
+              from: 0.55,
+              to: 0.78,
+              content: <p className="serif-lg">Endless feeds. Borrowed dreams. And real problems in your own community, still waiting for someone to solve them.</p>,
+            },
             { from: 0.78, to: 1, content: <p className="serif-xl">One by one, the lights went out.</p> },
           ]}
         />

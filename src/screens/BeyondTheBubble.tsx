@@ -12,7 +12,7 @@ function Scene() {
       <div className="stage-art stage-art-right-wide">
         <BubbleScene power={power} />
       </div>
-      <div className="stage-copy stage-copy-left">
+      <div className="stage-copy stage-copy-left stage-copy-narrow">
         <Beats
           beats={[
             {
@@ -34,7 +34,9 @@ function Scene() {
                     Both tracks share one rule: <em>talk to at least two judges</em>, and show how their feedback shaped
                     what you built.
                   </p>
-                  <p className="facts">Judge office hours · 4:00 – 5:30 PM</p>
+                  <p className="facts">
+                    Judge office hours · 4:00 – 5:30 PM
+                  </p>
                 </>
               ),
             },

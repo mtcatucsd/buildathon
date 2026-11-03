@@ -41,7 +41,11 @@ export default function Epilogue() {
       </div>
 
       <footer className="madeby">
-        made with love by{" "}
+        made with{" "}
+        <span className="ascii-heart" role="img" aria-label="love">
+          {"<3"}
+        </span>{" "}
+        by{" "}
         <a href={socials.mtc.url} target="_blank" rel="noopener noreferrer">
           @mtcatucsd
         </a>

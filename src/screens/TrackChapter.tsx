@@ -27,8 +27,8 @@ function Scene({ track }: { track: Track }) {
         <p className="eyebrow">
           {track.numeral} · {track.track}
         </p>
-        <p className="track-path">{track.path}</p>
         <h2 className="serif-xl dropcap">{track.title}</h2>
+        <p className="track-subtitle">{track.subtitle}</p>
         <p className="track-hook">{track.hook}</p>
         <p className="track-blurb">{track.blurb}</p>
         <p className="track-rule">Consult at least two judges and show how their feedback shaped your prototype.</p>

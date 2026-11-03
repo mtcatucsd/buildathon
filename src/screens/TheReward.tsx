@@ -12,7 +12,7 @@ export default function TheReward() {
       <div className="paper-inner">
         <Reveal>
           <p className="eyebrow">٧ · The Reward</p>
-          <h2 className="serif-xl dropcap">One thousand dollars, three teams.</h2>
+          <h2 className="serif-xl dropcap">One thousand dollars in prizes.</h2>
           <p className="paper-lede">
             Every track competes for the same pool. Judges score impact, creativity, execution, and the demo.
           </p>

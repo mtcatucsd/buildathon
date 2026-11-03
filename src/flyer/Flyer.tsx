@@ -38,7 +38,7 @@ export default function Flyer({ format }: { format: FlyerFormat }) {
         </p>
         <ul className="flyer-tracks">
           {tracks.map((t) => (
-            <li key={t.path}>~{t.path}</li>
+            <li key={t.path}>{t.title}</li>
           ))}
         </ul>
         <div className="flyer-foot">

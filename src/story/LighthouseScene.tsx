@@ -1,6 +1,7 @@
 import type { MotionValue } from "motion/react";
 import AsciiScene, { region, type Cell, type Frame, type Shaded } from "./AsciiScene";
 import { rng } from "./rng";
+import { stageFrame } from "./stageFrame";
 
 // The Manara West lighthouse in ASCII: a slender minaret-lighthouse on a dark island at dusk,
 // horizontal beams, a glowing path winding down past lanterns, a lone figure on the hill,
@@ -41,9 +42,13 @@ type Geo = { cx: number; horizon: number; s: number; lampY: number; lampHalf: nu
 
 function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   const wide = w >= 900;
+  const fr = stageFrame(w, h);
   const cx = w * (wide ? 0.66 : 0.5);
-  const horizon = h * 0.6;
-  const s = Math.min(h * 0.62, w * (wide ? 0.5 : 0.9)); // tower height scale
+  // Tall screens: the lighthouse stands in the upper area and the sea and hills fill everything below.
+  const horizon = fr.tall ? fr.top + fr.h * 0.86 : h * 0.6;
+  const s = fr.tall ? Math.min(fr.h * 0.8, w * 0.9) : Math.min(h * 0.62, w * (wide ? 0.5 : 0.9)); // tower height scale
+  // Below-horizon positions given as fractions of a wide layout (0.6 = horizon … 1 = bottom).
+  const hy = (k: number) => (fr.tall ? horizon + (h - horizon) * ((k - 0.6) / 0.4) : h * k);
   const fill = (id: number) => (ctx.fillStyle = region(id));
   const rand = rng(21);
 
@@ -65,12 +70,12 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   // Foreground hills sweeping in from both sides.
   fill(R.HILL);
   ctx.beginPath();
-  ctx.moveTo(0, h * 0.72);
-  ctx.bezierCurveTo(w * 0.25, h * 0.66, w * 0.4, h * 0.82, cx - s * 0.1, h * 0.9);
+  ctx.moveTo(0, hy(0.72));
+  ctx.bezierCurveTo(w * 0.25, hy(0.66), w * 0.4, hy(0.82), cx - s * 0.1, hy(0.9));
   ctx.lineTo(cx - s * 0.1, h);
   ctx.lineTo(0, h);
   ctx.fill();
-  const hillTop = (x: number) => h * 0.7 - Math.sin(((x - cx) / (w - cx)) * Math.PI * 0.9) * h * 0.06;
+  const hillTop = (x: number) => hy(0.7) - Math.sin(((x - cx) / (w - cx)) * Math.PI * 0.9) * (hy(0.66) - hy(0.6));
   ctx.beginPath();
   ctx.moveTo(cx + s * 0.15, h);
   for (let x = cx + s * 0.15; x <= w; x += 8) ctx.lineTo(x, hillTop(x) + (x < cx + s * 0.4 ? (cx + s * 0.4 - x) * 0.6 : 0));
@@ -189,7 +194,7 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
 
   // Crescent moon, upper right.
   const mx = wide ? w * 0.9 : w * 0.82;
-  const my = h * 0.16;
+  const my = fr.tall ? fr.top + fr.h * 0.12 : h * 0.16;
   const mr = Math.min(w, h) * 0.06;
   fill(R.MOON);
   ctx.beginPath();

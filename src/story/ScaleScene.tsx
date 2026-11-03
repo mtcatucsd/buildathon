@@ -1,4 +1,5 @@
 import type { MotionValue } from "motion/react";
+import { stageFrame } from "./stageFrame";
 import AsciiScene, { region, type Cell, type Frame, type Shaded } from "./AsciiScene";
 
 // Deen & Dunya: a brass balance. One pan holds a dome and minaret, the other a phone and a skyline.
@@ -16,9 +17,10 @@ type Geo = { cx: number; s: number; pivotY: number; tilt: number };
 
 function paint(ctx: CanvasRenderingContext2D, w: number, h: number, power: number, t: number): Geo {
   const cx = w / 2;
-  const s = Math.min(w * 0.95, h * 1.05);
-  const groundY = h * 0.92;
-  const pivotY = h * 0.2;
+  const fr = stageFrame(w, h);
+  const s = Math.min(w * 0.95, fr.h * 1.05);
+  const groundY = fr.top + fr.h * 0.92;
+  const pivotY = fr.top + fr.h * 0.2;
   // Settles from tipped to level, with a gentle sway that never quite stops.
   const tilt = ((1 - power) * 16 + Math.sin(t * 1.3) * 1.2 * (0.3 + (1 - power))) * (Math.PI / 180);
   const fill = (id: number) => (ctx.fillStyle = region(id));

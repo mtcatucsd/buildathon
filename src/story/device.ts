@@ -6,7 +6,9 @@ const small = typeof window !== "undefined" && (window.matchMedia("(pointer: coa
 export const device = {
   small,
   reducedMotion: typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  dpr: typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1,
+  // Phones render at their true density (up to 3×) so glyphs stay razor-sharp; their canvases are small
+  // enough that this stays cheap. Laptops cap at 2×.
+  dpr: typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, small ? 3 : 2) : 1,
   fps: small ? 24 : 30,
   // Scenes are shown smaller on phones, so cells shrink with them to keep the same level of detail.
   cellScale: small ? 0.72 : 1,
