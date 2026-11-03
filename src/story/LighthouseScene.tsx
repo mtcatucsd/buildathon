@@ -313,7 +313,7 @@ export default function LighthouseScene({ power }: { power: MotionValue<number> 
         paint={paint}
         shade={shade}
         power={power}
-        cell={7}
+        cell={7} fps={20}
       />
     </div>
   );

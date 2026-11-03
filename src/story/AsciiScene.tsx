@@ -39,6 +39,8 @@ type Props<G> = {
   stencilKey?: (power: number, t: number) => number | string;
   // Static artwork: redraw only on layout or when `power` changes, never on a timer.
   still?: boolean;
+  // Frame-rate cap for this scene (slow ambient scenes don't need 30).
+  fps?: number;
   label: string;
   className?: string;
 };
@@ -66,6 +68,7 @@ export default function AsciiScene<G>({
   dynamic = false,
   stencilKey,
   still = false,
+  fps = 30,
   label,
   className = "",
 }: Props<G>) {
@@ -201,26 +204,44 @@ export default function AsciiScene<G>({
       const frame: Frame<G> = { t, power: p, w: W, h: H, cols, rows, geo };
       ctx.clearRect(0, 0, W, H);
       const sh = shadeRef.current;
+      // Backgrounds are drawn as horizontal runs (one rect per run of equal colour), glyphs per cell.
+      // Glyphs are queued so all background rects land underneath them.
       let style = "";
+      let runStyle = "";
+      let runX = 0;
+      let runY = -1;
+      let runEnd = 0;
+      const flush = () => {
+        if (!runStyle) return;
+        if (runStyle !== style) ctx.fillStyle = style = runStyle;
+        ctx.fillRect(runX, runY - ch / 2, runEnd - runX + 0.5, ch + 0.5);
+        runStyle = "";
+      };
+      const glyphs: (string | number)[] = [];
       for (const c of cells) {
         const s = sh(c, frame);
-        if (!s) continue;
-        if (s[3]) {
-          const bg = rgba(s[3], 1);
-          if (bg !== style) ctx.fillStyle = style = bg;
-          ctx.fillRect(c.x - cw / 2, c.y - ch / 2, cw + 0.5, ch + 0.5);
+        const bg = s && s[3] ? rgba(s[3], 1) : "";
+        const x0 = c.x - cw / 2;
+        if (bg !== runStyle || c.y !== runY) {
+          flush();
+          if (bg) ((runStyle = bg), (runX = x0), (runY = c.y));
         }
-        if (s[2] <= 0.01) continue;
-        const fg = rgba(s[1], s[2]);
+        if (bg) runEnd = x0 + cw;
+        if (!s || s[2] <= 0.01 || s[0] === " ") continue;
+        glyphs.push(rgba(s[1], s[2]), s[0], c.x, c.y);
+      }
+      flush();
+      for (let i = 0; i < glyphs.length; i += 4) {
+        const fg = glyphs[i] as string;
         if (fg !== style) ctx.fillStyle = style = fg;
-        ctx.fillText(s[0], c.x, c.y);
+        ctx.fillText(glyphs[i + 1] as string, glyphs[i + 2] as number, glyphs[i + 3] as number);
       }
     };
 
     const loop = (now: number) => {
       raf = 0;
       if (!visible) return;
-      if (now - last > 1000 / device.fps) {
+      if (now - last > 1000 / Math.min(fps, device.fps)) {
         last = now;
         draw(now);
       }
@@ -261,7 +282,7 @@ export default function AsciiScene<G>({
       io.disconnect();
       nearIo.disconnect();
     };
-  }, [cell, dynamic, still, power]);
+  }, [cell, dynamic, still, fps, power]);
 
   return <canvas ref={canvasRef} className={`ascii-scene ${className}`} role="img" aria-label={label} />;
 }

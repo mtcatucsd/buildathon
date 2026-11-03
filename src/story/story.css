@@ -659,17 +659,12 @@ body {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-.sunset-pre {
-  margin: 0;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
-}
-.sunset canvas {
-  flex-shrink: 0;
-  max-width: none !important;
+.sunset-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
 }
 .art-credit {
   position: absolute;
@@ -744,17 +739,10 @@ body {
   text-align: left;
 }
 .epilogue-hand {
-  height: min(60vh, 520px);
+  height: min(78vh, 700px);
 }
 .epilogue-grid .serif-xl {
   margin: 0;
-}
-.yes-you {
-  margin: 0.4rem 0 0;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 1.3rem;
-  color: var(--medium-gray);
 }
 
 /* ---------- small screens ---------- */
@@ -797,7 +785,14 @@ body {
   .dropcap::first-letter {
     font-size: 2.4em;
   }
-  /* Art shrinks into the top of the screen; the hero keeps its full-bleed sunset. */
+  /* The hero sunset fills the top ~60% so its glyphs match the laptop's size, fading into the page. */
+  /* The whole sunset, full width, at its own aspect ratio, just under the top bar. */
+  .stage-art-hero {
+    /* Centred in the space between the top bar and the ~390px text panel (never under the bar). */
+    inset: max(4.25rem, calc(4.25rem + (100svh - 4.25rem - 56.25vw - 390px) / 2)) 0 auto 0;
+    aspect-ratio: 192 / 108;
+  }
+  /* Art sits in the top of the screen, text below on its own panel. */
   .stage-art-scene {
     inset: 3.5rem 0 42% 0;
   }
@@ -871,7 +866,7 @@ body {
     grid-template-columns: 1fr;
   }
   .epilogue-hand {
-    height: 32vh;
+    height: 44vh;
     order: -1;
   }
   .stage-art-right-wide {
@@ -882,5 +877,73 @@ body {
   }
   .day-log {
     font-size: 0.8rem;
+  }
+}
+
+/* Short phones (e.g. iPhone SE): a tighter hero panel so the whole sunset stays visible above it. */
+@media (max-width: 900px) and (max-height: 720px) {
+  .reveal .eyebrow {
+    margin-bottom: 0.6rem;
+  }
+  .reveal .lockup {
+    margin-bottom: 0.75rem;
+  }
+  .reveal .lockup-manara {
+    height: 22px;
+  }
+  .reveal .lockup-replit {
+    height: 26px;
+  }
+  .reveal .lockup-mtc {
+    height: 34px;
+  }
+  .display {
+    font-size: 2.6rem;
+  }
+  .display-sub {
+    margin: 0.4rem 0 0.75rem;
+  }
+  .reveal .cta {
+    margin-top: 1rem;
+    padding: 0.75rem 1.3rem;
+  }
+}
+
+/* Phones: the trophy and the schedule stack instead of overlapping. The panel sits at the bottom
+   and the trophy fills whatever space is left above it. */
+@media (max-width: 900px) {
+  .day {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 4.25rem 1rem 1.25rem;
+  }
+  .day-trophy {
+    position: relative;
+    inset: auto;
+    transform: none;
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    height: auto !important;
+  }
+  .day-copy {
+    position: relative;
+    inset: auto;
+    flex-shrink: 0;
+  }
+  .day-copy .serif-xl {
+    font-size: 1.5rem;
+  }
+  .day-where {
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.72rem;
+  }
+  .day-note {
+    display: none;
+  }
+  .day-log li {
+    padding: 0.28rem 0;
   }
 }

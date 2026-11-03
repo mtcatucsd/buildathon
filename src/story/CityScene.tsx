@@ -176,5 +176,5 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
 }
 
 export default function CityScene({ power }: { power: MotionValue<number> }) {
-  return <AsciiScene label="An ASCII city of towers and glowing screens under falling glyphs" paint={paint} shade={shade} power={power} cell={9} />;
+  return <AsciiScene label="An ASCII city of towers and glowing screens under falling glyphs" paint={paint} shade={shade} power={power} cell={9} fps={24} />;
 }

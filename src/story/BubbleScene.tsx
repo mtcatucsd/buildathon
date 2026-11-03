@@ -344,7 +344,7 @@ export default function BubbleScene({ power }: { power: MotionValue<number> }) {
       paint={paint}
       shade={shade}
       power={power}
-      cell={7}
+      cell={7} fps={24}
     />
   );
 }

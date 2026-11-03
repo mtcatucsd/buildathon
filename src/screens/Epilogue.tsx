@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useScroll, useTransform } from "motion/react";
 import Reveal from "../components/Reveal";
-import PointScene from "../story/PointScene";
+import TorchScene from "../story/TorchScene";
 import { event, socials } from "../data/event";
 
 export default function Epilogue() {
@@ -16,7 +16,6 @@ export default function Epilogue() {
           <p className="eyebrow">٨ · Epilogue</p>
           <p className="serif-xl">Every lighthouse starts with one light.</p>
           <p className="serif-xl gold">What will you build?</p>
-          <p className="yes-you">(yes, you.)</p>
           <a className="cta cta-lg" href={event.registerUrl} target="_blank" rel="noopener noreferrer">
             &gt; claim one of {event.capacity} spots
           </a>
@@ -25,7 +24,7 @@ export default function Epilogue() {
           </p>
         </Reveal>
         <div className="epilogue-hand">
-          <PointScene power={power} />
+          <TorchScene power={power} />
         </div>
       </div>
 

@@ -3,9 +3,12 @@ declare module "ascii-magic-art/pieces/*.js" {
   const create: (...args: unknown[]) => (t: number) => unknown;
   export default create;
 }
-declare module "ascii-magic-art/runtime/player.js" {
-  export function play(pre: HTMLPreElement, mod: unknown, opts?: Record<string, unknown>): () => void;
-}
 declare module "ascii-magic-art/runtime/canvas.js" {
   export const CELL_W: number;
+  export function renderMode(meta: unknown, look?: Record<string, unknown>): string;
+  export function paint(ctx: CanvasRenderingContext2D, frame: unknown, palette: unknown, opts: Record<string, unknown>): void;
+  export class GlyphAtlas {}
+}
+declare module "ascii-magic-art/runtime/glyphs.js" {
+  export function restyle(frame: unknown, palette: unknown, opts?: Record<string, unknown>): unknown;
 }
