@@ -27,8 +27,8 @@ const HAND: Prim[] = (() => {
   const p: Prim[] = [];
   let id = 1;
   // Dark coat sleeve, white shirt cuff and wrist, receding back toward the lower left.
-  p.push({ kind: "capsule", id: id++, a: [-0.75, -1.05, -0.85], b: [-0.3, -0.42, -0.4], ra: 0.26, rb: 0.21, mat: "sleeve" });
-  p.push({ kind: "capsule", id: id++, a: [-0.3, -0.42, -0.4], b: [-0.17, -0.22, -0.22], ra: 0.15, rb: 0.135, mat: "cloth" });
+  p.push({ kind: "capsule", id: id++, a: [-0.5, -0.7, -0.65], b: [-0.3, -0.42, -0.4], ra: 0.19, rb: 0.17, mat: "sleeve" });
+  p.push({ kind: "capsule", id: id++, a: [-0.3, -0.42, -0.4], b: [-0.17, -0.22, -0.22], ra: 0.13, rb: 0.12, mat: "cloth" });
   p.push({ kind: "capsule", id: id++, a: [-0.17, -0.22, -0.22], b: [-0.02, -0.06, -0.06], ra: 0.105, rb: 0.098, mat: "skin" });
   // Back of the hand, tipped toward the viewer.
   p.push({ kind: "ellipsoid", id: id++, c: [0.03, 0.0, -0.03], r: [0.15, 0.12, 0.085], mat: "skin" });
@@ -136,7 +136,7 @@ type Geo = { ox: number; oy: number; unit: number };
 
 function paint(_ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   const unit = Math.min(w * 1.25, h * 1.05);
-  return { ox: w * 0.58, oy: h * 0.45, unit: unit * 0.8 };
+  return { ox: w * 0.55, oy: h * 0.46, unit: unit * 0.78 };
 }
 
 // Shading is cached per layout and per (quantised) push, since the hand only moves with scroll.
@@ -175,7 +175,7 @@ function handCells(f: Frame<Geo>) {
       const joint = best.mat === "skin" && best.t > 0.01 && best.t < 0.07 && (INDEX_IDS.has(best.id) || best.id > 8);
       // Depth cue: nearer forms are brighter, so the fingertip leads and the arm falls back.
       const near = Math.max(0, Math.min(1, (best.z + 0.3) / 0.78));
-      const light = Math.min(1, (0.06 + Math.pow(lambert, 1.2) * 0.88 + Math.max(0, best.n[2]) * 0.08) * (0.45 + near * 0.75));
+      const light = Math.min(1, (0.06 + Math.pow(lambert, 1.2) * 0.88 + Math.max(0, best.n[2]) * 0.08) * (best.mat === "skin" ? 0.5 + near * 0.7 : 0.2 + near * 0.9));
       ids[r * cols + c] = best.id;
       zs[r * cols + c] = best.z;
       cells[r * cols + c] = { id: best.id, light, mat: best.mat, edge: 0, nail, joint };
@@ -218,16 +218,16 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
   const L = hc.light;
   if (hc.mat === "sleeve") {
     // Dark coat: broad diagonal strokes, a lit edge along the top.
-    if (hc.edge === 1) return ["/", mix("70,66,92", CLOTH_LIGHT, L * 0.5), 0.9, "12,10,16"];
-    const glyph = L > 0.7 ? "%" : L > 0.45 ? "/" : L > 0.25 ? "//"[0] : ".";
-    return [glyph, mix("44,40,64", "150,144,176", L), 0.5 + L * 0.4, "16,14,22"];
+    // Kept faint so it reads as a suggestion and the hand stays the focus.
+    if (hc.edge === 1) return ["/", mix("60,56,80", CLOTH_LIGHT, L * 0.3), 0.35];
+    return (c.col + c.row) % 3 === 0 ? ["/", mix("44,40,64", "120,114,140", L), 0.15 + L * 0.2] : null;
   }
   if (hc.mat === "cloth") {
     // White-chalk drapery: long folds as vertical-ish strokes.
-    if (hc.edge === 1) return ["(", CLOTH_LIGHT, 0.8, "14,12,18"];
+    if (hc.edge === 1) return ["(", mix(CLOTH_DARK, CLOTH_LIGHT, 0.6), 0.6];
     const fold = Math.sin(c.col * 0.9 + c.row * 0.5) > 0.3;
-    const glyph = L > 0.7 ? (fold ? ")" : "%") : L > 0.45 ? (fold ? ")" : "=") : L > 0.25 ? "/" : "x";
-    return [glyph, mix(CLOTH_DARK, CLOTH_LIGHT, L), 0.4 + L * 0.55, "18,16,22"];
+    const glyph = L > 0.6 ? (fold ? ")" : "=") : L > 0.35 ? "/" : ".";
+    return [glyph, mix(CLOTH_DARK, CLOTH_LIGHT, L), 0.25 + L * 0.45];
   }
   if (hc.nail) return ["=", CHALK_LIGHT, 0.85, "34,20,18"];
   if (hc.edge === 1) return ["(", mix(CHALK_MID, LAMP, L * 0.6), 0.95, "14,10,14"];
