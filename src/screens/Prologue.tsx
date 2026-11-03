@@ -49,11 +49,6 @@ function Scene() {
                 </div>
               ),
             },
-            {
-              from: 0.45,
-              to: 1,
-              content: <p className="serif-xl dropcap">Every day, the sun goes down. And when the light goes, the noise comes up.</p>,
-            },
           ]}
         />
       </div>
