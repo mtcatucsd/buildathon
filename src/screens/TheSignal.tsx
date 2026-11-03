@@ -11,7 +11,7 @@ function Scene() {
 
   return (
     <>
-      <motion.div className="stage-art stage-art-bleed" style={{ opacity: sceneOpacity }}>
+      <motion.div className="stage-art stage-art-bleed stage-art-scene" style={{ opacity: sceneOpacity }}>
         <LighthouseScene power={power} />
       </motion.div>
       <div className="stage-copy stage-copy-left">

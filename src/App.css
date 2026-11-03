@@ -113,17 +113,16 @@
 /* ---------- cursor spotlight ---------- */
 .spotlight {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 840px;
+  height: 840px;
   z-index: 0;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.4s;
-  background: radial-gradient(
-    420px circle at var(--x, 50%) var(--y, 50%),
-    rgba(255, 178, 63, 0.06),
-    rgba(255, 90, 31, 0.025) 40%,
-    transparent 70%
-  );
+  will-change: transform;
+  background: radial-gradient(closest-side, rgba(255, 178, 63, 0.06), rgba(255, 90, 31, 0.025) 55%, transparent);
 }
 
 /* ---------- follow links (mtchacks pattern) ---------- */

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
+import { device } from "./device";
+import { rng } from "./rng";
 
 // Engine for drawn (procedural) ASCII scenes.
 // 1. `paint` draws the scene's shapes into a stencil using region ids (see `region()`).
@@ -32,7 +34,11 @@ type Props<G> = {
   shade: (cell: Cell, f: Frame<G>) => Shaded;
   power?: MotionValue<number>;
   cell?: number;
+  // Repaint the stencil while running (shapes move). With `stencilKey`, only when the key changes.
   dynamic?: boolean;
+  stencilKey?: (power: number, t: number) => number | string;
+  // Static artwork: redraw only on layout or when `power` changes, never on a timer.
+  still?: boolean;
   label: string;
   className?: string;
 };
@@ -42,20 +48,45 @@ const CHAR_ASPECT = 0.6;
 // Stencil supersampling: each cell reads the centre of a 3×3 block, away from antialiased edges.
 const SS = 3;
 
-export default function AsciiScene<G>({ paint, shade, power, cell = 9, dynamic = false, label, className = "" }: Props<G>) {
+// fillStyle strings are cached (alpha quantised to 1/32) so a frame doesn't allocate thousands of strings.
+const styles = new Map<string, string>();
+function rgba(rgb: string, a: number) {
+  const q = Math.round(Math.min(1, a) * 32);
+  const key = rgb + "|" + q;
+  let v = styles.get(key);
+  if (!v) styles.set(key, (v = `rgba(${rgb},${q / 32})`));
+  return v;
+}
+
+export default function AsciiScene<G>({
+  paint,
+  shade,
+  power,
+  cell = 9,
+  dynamic = false,
+  stencilKey,
+  still = false,
+  label,
+  className = "",
+}: Props<G>) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const paintRef = useRef(paint);
   const shadeRef = useRef(shade);
+  const keyRef = useRef(stencilKey);
   paintRef.current = paint;
   shadeRef.current = shade;
+  keyRef.current = stencilKey;
 
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
     const stencil = document.createElement("canvas");
     const sctx = stencil.getContext("2d", { willReadFrequently: true })!;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = device.reducedMotion;
     const born = performance.now();
+    let lastKey: number | string | undefined;
+    let lastPower = -1;
+    let laidOut = "";
     let W = 0;
     let H = 0;
     let cols = 0;
@@ -122,13 +153,16 @@ export default function AsciiScene<G>({ paint, shade, power, cell = 9, dynamic =
     };
 
     const layout = () => {
-      W = canvas.clientWidth;
-      H = canvas.clientHeight;
-      if (!W || !H) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (!w || !h || laidOut === `${w}x${h}`) return false;
+      laidOut = `${w}x${h}`;
+      W = w;
+      H = h;
+      const dpr = device.dpr;
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
-      const size = W < 700 ? cell * 0.8 : cell;
+      const size = cell * device.cellScale;
       cols = Math.round(W / size);
       rows = Math.round((H / size) * CHAR_ASPECT);
       cw = W / cols;
@@ -136,33 +170,49 @@ export default function AsciiScene<G>({ paint, shade, power, cell = 9, dynamic =
       stencil.width = cols * SS;
       stencil.height = rows * SS;
       cells = [];
+      const rand = rng(cols * 7919 + rows);
       for (let r = 0; r < rows; r++)
         for (let c = 0; c < cols; c++)
-          cells.push({ col: c, row: r, x: (c + 0.5) * cw, y: (r + 0.5) * ch, region: 0, aux: 0, left: 0, right: 0, up: 0, down: 0, seed: Math.random() });
+          cells.push({ col: c, row: r, x: (c + 0.5) * cw, y: (r + 0.5) * ch, region: 0, aux: 0, left: 0, right: 0, up: 0, down: 0, seed: rand() });
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.font = `500 ${ch * 0.95}px ${FONT}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      restencil(power?.get() ?? 1, 0);
+      const p0 = power?.get() ?? 1;
+      restencil(p0, 0);
+      lastKey = keyRef.current?.(p0, 0);
+      lastPower = -1;
+      return true;
     };
 
     const draw = (now: number) => {
       if (!cols) return;
       const t = reduce ? 0 : (now - born) / 1000;
       const p = power?.get() ?? 1;
-      if (dynamic) restencil(p, t);
+      if (still && Math.abs(p - lastPower) < 0.004) return;
+      lastPower = p;
+      if (dynamic) {
+        const key = keyRef.current?.(p, t);
+        if (key === undefined || key !== lastKey) {
+          restencil(p, t);
+          lastKey = key;
+        }
+      }
       const frame: Frame<G> = { t, power: p, w: W, h: H, cols, rows, geo };
       ctx.clearRect(0, 0, W, H);
       const sh = shadeRef.current;
+      let style = "";
       for (const c of cells) {
         const s = sh(c, frame);
         if (!s) continue;
         if (s[3]) {
-          ctx.fillStyle = `rgb(${s[3]})`;
+          const bg = rgba(s[3], 1);
+          if (bg !== style) ctx.fillStyle = style = bg;
           ctx.fillRect(c.x - cw / 2, c.y - ch / 2, cw + 0.5, ch + 0.5);
         }
         if (s[2] <= 0.01) continue;
-        ctx.fillStyle = `rgba(${s[1]},${Math.min(1, s[2])})`;
+        const fg = rgba(s[1], s[2]);
+        if (fg !== style) ctx.fillStyle = style = fg;
         ctx.fillText(s[0], c.x, c.y);
       }
     };
@@ -170,7 +220,7 @@ export default function AsciiScene<G>({ paint, shade, power, cell = 9, dynamic =
     const loop = (now: number) => {
       raf = 0;
       if (!visible) return;
-      if (now - last > 1000 / 30) {
+      if (now - last > 1000 / device.fps) {
         last = now;
         draw(now);
       }
@@ -180,27 +230,38 @@ export default function AsciiScene<G>({ paint, shade, power, cell = 9, dynamic =
       if (!raf && visible) raf = requestAnimationFrame(loop);
     };
 
-    const ro = new ResizeObserver(() => {
-      layout();
-      draw(performance.now());
-    });
+    // Nothing is built until the scene is near the viewport, so the page loads without
+    // laying out every chapter's art up front.
+    let fontsReady = false;
+    let near = false;
+    const prepare = () => {
+      if (!fontsReady || !near) return;
+      if (layout()) draw(performance.now());
+    };
+    const ro = new ResizeObserver(prepare);
     ro.observe(canvas);
+    const nearIo = new IntersectionObserver(([e]) => {
+      near = e.isIntersecting;
+      prepare();
+    }, { rootMargin: "100% 0px" });
+    nearIo.observe(canvas);
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
       start();
     });
     io.observe(canvas);
     document.fonts.ready.then(() => {
-      layout();
-      draw(performance.now());
+      fontsReady = true;
+      prepare();
     });
 
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();
+      nearIo.disconnect();
     };
-  }, [cell, dynamic, power]);
+  }, [cell, dynamic, still, power]);
 
   return <canvas ref={canvasRef} className={`ascii-scene ${className}`} role="img" aria-label={label} />;
 }

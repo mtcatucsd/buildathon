@@ -21,10 +21,8 @@ function BeatLine({ beat, progress, first, last }: { beat: Beat; progress: Motio
   const input = [beat.from, beat.from + fade, beat.to - fade, beat.to];
   const opacity = useTransform(progress, input, [first ? 1 : 0, 1, 1, last ? 1 : 0]);
   const y = useTransform(progress, input, [first ? 0 : 28, 0, 0, last ? 0 : -28]);
-  const blur = useTransform(progress, input, [first ? 0 : 6, 0, 0, last ? 0 : 6], { clamp: true });
-  const filter = useTransform(blur, (b) => `blur(${b}px)`);
   return (
-    <motion.div className="beat" style={{ opacity, y, filter }}>
+    <motion.div className="beat" style={{ opacity, y }}>
       {beat.content}
     </motion.div>
   );

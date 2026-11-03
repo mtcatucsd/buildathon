@@ -27,18 +27,14 @@ function Scene() {
   });
 
   // Afternoon gold → Maghrib ember → dusk violet → night.
-  const sky = useTransform(
-    progress,
-    [0, MAGHRIB - 0.12, MAGHRIB, MAGHRIB + 0.15, 1],
-    [
-      "linear-gradient(180deg, #2a2531 0%, #7a5a3a 65%, #ffb23f 100%)",
-      "linear-gradient(180deg, #241c2c 0%, #8a3a24 60%, #ff7d3a 100%)",
-      "linear-gradient(180deg, #18141f 0%, #4a1f2c 55%, #ff5a1f 100%)",
-      "linear-gradient(180deg, #120f18 0%, #2a1c2c 65%, #6a2a24 100%)",
-      "linear-gradient(180deg, #0b090e 0%, #100d14 70%, #1c1726 100%)",
-    ]
-  );
-  const sunY = useTransform(progress, [0, MAGHRIB], ["18%", "92%"]);
+  // Afternoon gold → Maghrib ember → dusk → night. Each sky is its own layer that fades in over the
+  // previous one: animating opacity is GPU-cheap, animating a gradient repaints the whole screen.
+  const stops = [0, MAGHRIB - 0.12, MAGHRIB, MAGHRIB + 0.15, 1];
+  const o1 = useTransform(progress, [stops[0], stops[1]], [0, 1]);
+  const o2 = useTransform(progress, [stops[1], stops[2]], [0, 1]);
+  const o3 = useTransform(progress, [stops[2], stops[3]], [0, 1]);
+  const o4 = useTransform(progress, [stops[3], stops[4]], [0, 1]);
+  const sunY = useTransform(progress, [0, MAGHRIB], ["18%", "92%"]); // % of the orbit's height
   const sunOpacity = useTransform(progress, [MAGHRIB - 0.04, MAGHRIB + 0.02], [1, 0]);
   const moonY = useTransform(progress, [MAGHRIB + 0.05, 1], ["95%", "22%"]);
   const moonOpacity = useTransform(progress, [MAGHRIB + 0.04, MAGHRIB + 0.14], [0, 1]);
@@ -50,12 +46,21 @@ function Scene() {
   const moonFade = useTransform(progress, [AWARDS - 0.1, AWARDS - 0.04], [1, 0]);
 
   return (
-    <motion.div className="day" style={{ background: sky }}>
+    <div className="day">
+      <div className="day-sky sky-0" />
+      <motion.div className="day-sky sky-1" style={{ opacity: o1 }} />
+      <motion.div className="day-sky sky-2" style={{ opacity: o2 }} />
+      <motion.div className="day-sky sky-3" style={{ opacity: o3 }} />
+      <motion.div className="day-sky sky-4" style={{ opacity: o4 }} />
       <motion.div className="day-stars" style={{ opacity: stars }} />
       <div className="day-orbit">
-        <motion.div className="day-sun" style={{ top: sunY, opacity: sunOpacity }} />
+        <motion.div className="day-track" style={{ y: sunY, opacity: sunOpacity }}>
+          <div className="day-sun" />
+        </motion.div>
         <motion.div style={{ opacity: moonFade }}>
-          <motion.div className="day-moon" style={{ top: moonY, opacity: moonOpacity }} />
+          <motion.div className="day-track" style={{ y: moonY, opacity: moonOpacity }}>
+            <div className="day-moon" />
+          </motion.div>
         </motion.div>
       </div>
       <motion.div className="day-trophy" style={{ opacity: trophyOpacity }}>
@@ -77,7 +82,7 @@ function Scene() {
           ))}
         </ol>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

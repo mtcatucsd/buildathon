@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import * as oceanSunset from "ascii-magic-art/pieces/ocean-sunset.js";
 import { play } from "ascii-magic-art/runtime/player.js";
 import { CELL_W } from "ascii-magic-art/runtime/canvas.js";
+import { device } from "./device";
 
 // Plays the piece full-bleed: the <pre>'s font size is scaled so the art covers the box.
 export default function SunsetScene({ className = "" }: { className?: string }) {
@@ -12,7 +13,8 @@ export default function SunsetScene({ className = "" }: { className?: string }) 
   useEffect(() => {
     const box = boxRef.current!;
     const pre = preRef.current!;
-    const stop = play(pre, oceanSunset, { look: { look: "ascii" } });
+    // Phones get a single still frame: at cover size the grid is a ~3000px canvas, too heavy to animate there.
+    const stop = play(pre, oceanSunset, { look: { look: "ascii" }, maxFps: 12, still: device.small || device.reducedMotion });
     const canvas = pre.nextElementSibling as HTMLCanvasElement;
 
     // A cell is CELL_W × font-size wide (square cells are as tall as wide), so pick the
@@ -24,7 +26,13 @@ export default function SunsetScene({ className = "" }: { className?: string }) 
       pre.style.fontSize = `${px}px`;
     };
     fit();
-    const ro = new ResizeObserver(fit);
+    // Refit only when the box width changes (mobile URL-bar height changes shouldn't re-render the art).
+    let lastW = box.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (box.clientWidth === lastW) return;
+      lastW = box.clientWidth;
+      fit();
+    });
     ro.observe(box);
     return () => {
       ro.disconnect();

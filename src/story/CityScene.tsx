@@ -76,7 +76,7 @@ const CARD_TINTS = [ORANGE, GOLD, BLUE, "190,120,230", "120,200,200"];
 function feed(u: number, py: number, cardH: number, card: number, t: number, glitch: boolean): Shaded {
   const y = (((py % cardH) + cardH) % cardH) / cardH; // position within the post
   const tint = CARD_TINTS[(card * 7 + 3) % CARD_TINTS.length];
-  if (glitch) return [RAIN[Math.floor(Math.random() * RAIN.length)], tint, 0.7];
+  if (glitch) return [RAIN[(card * 31 + Math.floor(t * 20)) % RAIN.length], tint, 0.7];
   if (y < 0.14) {
     // Header: avatar + username + "…"
     if (u < 0.16) return [y > 0.03 && y < 0.11 ? "O" : " ", tint, 0.95];
@@ -141,7 +141,7 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
       const word = FEED[(c.row + Math.floor(t * 2)) % FEED.length];
       const ch = word[(c.col + tick) % word.length] || "▒";
       const hue = (c.row + Math.floor(t)) % 3 === 0 ? ORANGE : BLUE;
-      const glitch = Math.random() < noise * 0.4;
+      const glitch = ((c.seed * 9973 + tick * 0.37) % 1) < noise * 0.4;
       return [glitch ? RAIN[tick % RAIN.length] : ch, hue, 0.55 + Math.sin(t * 6 + c.row) * 0.2];
     }
     case R.ANTENNA:
@@ -167,7 +167,7 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
       const py = ly + p.h / 2 + t * p.speed; // the feed scrolls forever
       const card = Math.floor(py / cardH) + p.hue * 11;
       // As the city goes dark the feeds glitch harder.
-      const glitch = Math.random() < noise * 0.12;
+      const glitch = ((c.seed * 7919 + Math.floor(t * 12) * 0.29) % 1) < noise * 0.12;
       const fd = feed(u, py, cardH, card, t, glitch);
       return fd ? [fd[0], fd[1], fd[2], "12,10,16"] : [" ", WHITE, 0, "12,10,16"];
     }

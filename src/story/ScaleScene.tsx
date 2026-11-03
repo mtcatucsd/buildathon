@@ -122,6 +122,10 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number, power: numbe
   return { cx, s, pivotY, tilt };
 }
 
+// Repaint the stencil only when the beam has tilted by another quarter degree.
+const tiltKey = (power: number, t: number) =>
+  Math.round(((1 - power) * 16 + Math.sin(t * 1.3) * 1.2 * (0.3 + (1 - power))) * 4);
+
 function shade(c: Cell, f: Frame<Geo>): Shaded {
   const { geo: g, t } = f;
   // Light falls from upper left: brighter toward the left of each shape.
@@ -166,5 +170,15 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
 }
 
 export default function ScaleScene({ power }: { power: MotionValue<number> }) {
-  return <AsciiScene label="An ASCII balance scale weighing a mosque against a city and a phone" paint={paint} shade={shade} power={power} cell={7} dynamic />;
+  return (
+    <AsciiScene
+      label="An ASCII balance scale weighing a mosque against a city and a phone"
+      paint={paint}
+      shade={shade}
+      power={power}
+      cell={7}
+      dynamic
+      stencilKey={tiltKey}
+    />
+  );
 }

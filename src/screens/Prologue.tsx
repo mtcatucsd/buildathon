@@ -8,16 +8,17 @@ import { event } from "../data/event";
 
 function Scene() {
   const progress = useChapterProgress();
-  // The sun goes down as you scroll: the scene dims and cools into night.
-  const filter = useTransform(progress, [0, 0.55, 1], ["brightness(1) saturate(1)", "brightness(0.55) saturate(0.9)", "brightness(0.12) saturate(0.6)"]);
+  // The sun goes down as you scroll: a dark overlay fades in (opacity is GPU-cheap; filters are not).
+  const night = useTransform(progress, [0, 0.55, 1], [0, 0.45, 0.88]);
   const scale = useTransform(progress, [0, 1], [1.04, 1.16]);
   const hint = useTransform(progress, [0, 0.06], [1, 0]);
 
   return (
     <>
-      <motion.div className="stage-art stage-art-bleed" style={{ filter, scale }}>
+      <motion.div className="stage-art stage-art-bleed" style={{ scale }}>
         <SunsetScene />
       </motion.div>
+      <motion.div className="stage-night" style={{ opacity: night }} />
       <div className="stage-shade stage-shade-hero" />
       <div className="stage-copy stage-copy-left">
         <Beats

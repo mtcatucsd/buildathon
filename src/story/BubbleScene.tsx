@@ -169,6 +169,62 @@ function glass(u: number, v: number, t: number, shatter: number): Shaded {
   return null; // clear glass: let the interior show through
 }
 
+// Shard ownership: which shard owns each point of the unit disc, precomputed on a 96×96 grid
+// (instead of a nearest-seed search for every cell, every frame). Also the distance to that seed.
+const VG = 96;
+let voronoi: { shards: Shard[]; owner: Uint8Array; dist: Float32Array } | null = null;
+function owner(shards: Shard[]) {
+  if (voronoi && voronoi.shards === shards) return voronoi;
+  const own = new Uint8Array(VG * VG);
+  const dist = new Float32Array(VG * VG);
+  for (let y = 0; y < VG; y++)
+    for (let x = 0; x < VG; x++) {
+      const u = (x + 0.5) / VG * 2 - 1;
+      const v = (y + 0.5) / VG * 2 - 1;
+      let nearest = 0;
+      let nd = Infinity;
+      for (let j = 0; j < shards.length; j++) {
+        const dd = (u - shards[j].ax) ** 2 + (v - shards[j].ay) ** 2;
+        if (dd < nd) ((nd = dd), (nearest = j));
+      }
+      own[y * VG + x] = nearest;
+      dist[y * VG + x] = nd;
+    }
+  voronoi = { shards, owner: own, dist };
+  return voronoi;
+}
+
+// Conversation arcs rasterised once per frame into a per-cell map (value: 1 = travelling dot, 0.55 = trail).
+let talkCache = { t: -1, cols: 0, map: new Float32Array(0) };
+function talkMap(f: Frame<Geo>, talk: number) {
+  if (talkCache.t === f.t && talkCache.cols === f.cols) return talkCache.map;
+  const { geo: g, t, cols, rows } = f;
+  const map = new Float32Array(cols * rows);
+  const cw = f.w / cols;
+  const ch = f.h / rows;
+  for (const [ji, j] of g.judges.entries()) {
+    const sx = g.team.x;
+    const sy = g.team.y - g.r * 0.15;
+    const ex = j.x;
+    const ey = j.y - g.r * 0.05;
+    const mx = (sx + ex) / 2;
+    const my = Math.min(sy, ey) - g.r * 0.55;
+    const pos = (t * 0.5 + ji * 0.5) % 1;
+    for (let k = 0; k <= 80 * talk; k++) {
+      const s = k / 80;
+      const x = (1 - s) * (1 - s) * sx + 2 * (1 - s) * s * mx + s * s * ex;
+      const y = (1 - s) * (1 - s) * sy + 2 * (1 - s) * s * my + s * s * ey;
+      const col = Math.floor(x / cw);
+      const row = Math.floor(y / ch);
+      if (col < 0 || row < 0 || col >= cols || row >= rows) continue;
+      const v = Math.abs(pos - s) < 0.04 ? 1 : 0.55;
+      if (v > map[row * cols + col]) map[row * cols + col] = v;
+    }
+  }
+  talkCache = { t: f.t, cols, map };
+  return talkCache.map;
+}
+
 let crackCache = { key: "", map: new Float32Array(0) };
 function crackMap(f: Frame<Geo>, crack: number) {
   const key = `${f.cols}x${f.rows}:${crack.toFixed(3)}`;
@@ -217,19 +273,17 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
     if (gl) return gl;
   } else {
     // Each shard is a Voronoi cell of the sphere, translated outward and fading.
+    const vo = owner(g.shards);
     for (let i = 0; i < g.shards.length; i++) {
       const sh = g.shards[i];
       const fly = shatter * sh.speed * 0.55;
       const su = u - sh.dir[0] * fly;
       const sv = v - sh.dir[1] * fly;
       if (su * su + sv * sv > 1) continue;
-      let nearest = 0;
-      let nd = Infinity;
-      for (let j = 0; j < g.shards.length; j++) {
-        const dd = (su - g.shards[j].ax) ** 2 + (sv - g.shards[j].ay) ** 2;
-        if (dd < nd) ((nd = dd), (nearest = j));
-      }
-      if (nearest !== i) continue;
+      const gx = Math.min(VG - 1, Math.max(0, Math.floor(((su + 1) / 2) * VG)));
+      const gy = Math.min(VG - 1, Math.max(0, Math.floor(((sv + 1) / 2) * VG)));
+      if (vo.owner[gy * VG + gx] !== i) continue;
+      const nd = vo.dist[gy * VG + gx];
       const fade = 1 - shatter * 0.55;
       const gl = glass(su, sv, t + sh.spin, shatter);
       if (gl) return [gl[0], gl[1], gl[2] * fade];
@@ -240,26 +294,11 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
 
   // Conversation: dotted arcs from the team to each judge, with travelling dots.
   if (talk > 0) {
-    for (const [ji, j] of g.judges.entries()) {
-      const sx = g.team.x;
-      const sy = g.team.y - g.r * 0.15;
-      const ex = j.x;
-      const ey = j.y - g.r * 0.05;
-      const mx = (sx + ex) / 2;
-      const my = Math.min(sy, ey) - g.r * 0.55;
-      // Distance from this cell to the quadratic curve, sampled.
-      for (let k = 0; k <= 40 * talk; k++) {
-        const s = k / 40;
-        const x = (1 - s) * (1 - s) * sx + 2 * (1 - s) * s * mx + s * s * ex;
-        const y = (1 - s) * (1 - s) * sy + 2 * (1 - s) * s * my + s * s * ey;
-        if (Math.abs(c.x - x) < f.w / f.cols / 1.8 && Math.abs(c.y - y) < f.h / f.rows / 1.8) {
-          const pos = (t * 0.5 + ji * 0.5) % 1;
-          const near = Math.abs(pos - s) < 0.04;
-          return [near ? "o" : "·", near ? CREAM : LAMP, near ? 1 : 0.55];
-        }
-      }
-      // Speech bubble above each judge once the line arrives.
-      if (talk > 0.9) {
+    const tv = talkMap(f, talk)[c.row * f.cols + c.col];
+    if (tv) return [tv === 1 ? "o" : "·", tv === 1 ? CREAM : LAMP, tv === 1 ? 1 : 0.55];
+    // Speech bubble above each judge once the line arrives.
+    if (talk > 0.9) {
+      for (const [ji, j] of g.judges.entries()) {
         const bx = Math.round((c.x - j.x) / (f.w / f.cols));
         const by = Math.round((c.y - (j.y - g.r * 0.62)) / (f.h / f.rows));
         const text = ji === 0 ? "( ? )" : "( ! )";

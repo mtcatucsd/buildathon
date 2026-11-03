@@ -8,7 +8,7 @@ function Scene() {
   const power = useTransform(progress, [0.1, 0.85], [1, 0]);
   return (
     <>
-      <div className="stage-art stage-art-bleed">
+      <div className="stage-art stage-art-bleed stage-art-scene">
         <CityScene power={power} />
       </div>
       <div className="stage-shade" />

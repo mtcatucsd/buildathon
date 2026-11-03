@@ -149,16 +149,39 @@ function linkMap(f: Frame<Geo>) {
   return map;
 }
 
+let nodeCache = { key: "", map: new Int16Array(0) };
+function nodeMap(f: Frame<Geo>) {
+  const key = `${f.cols}x${f.rows}:${f.w}x${f.h}`;
+  if (nodeCache.key === key) return nodeCache.map;
+  const map = new Int16Array(f.cols * f.rows).fill(-1);
+  const best = new Float32Array(f.cols * f.rows).fill(Infinity);
+  const cw = f.w / f.cols;
+  const ch = f.h / f.rows;
+  f.geo.pts.forEach((p, i) => {
+    const c0 = Math.floor(p.x / cw);
+    const r0 = Math.floor(p.y / ch);
+    for (let r = r0 - 4; r <= r0 + 4; r++)
+      for (let c = c0 - 4; c <= c0 + 4; c++) {
+        if (c < 0 || r < 0 || c >= f.cols || r >= f.rows) continue;
+        const d = Math.hypot((c + 0.5) - p.x / cw, (r + 0.5) - p.y / ch);
+        if (d <= 3.2 && d < best[r * f.cols + c]) ((best[r * f.cols + c] = d), (map[r * f.cols + c] = i));
+      }
+  });
+  nodeCache = { key, map };
+  return map;
+}
+
 function shade(c: Cell, f: Frame<Geo>): Shaded {
   const { geo: g, power, t } = f;
   const reach = power * g.pts.length;
   const cw = f.w / f.cols;
   const ch = f.h / f.rows;
 
-  // Campus nodes and their halos.
-  for (const p of g.pts) {
+  // Campus nodes and their halos (nearest node per cell is precomputed once per layout).
+  const near = nodeMap(f)[c.row * f.cols + c.col];
+  if (near >= 0) {
+    const p = g.pts[near];
     const d = Math.hypot((c.x - p.x) / cw, (c.y - p.y) / ch);
-    if (d > 3.2) continue;
     const on = p.order < reach;
     const host = p.order === 0;
     if (d < 0.8) {

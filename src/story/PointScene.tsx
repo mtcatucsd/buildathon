@@ -144,7 +144,7 @@ type HandCell = { id: number; light: number; mat: Mat; edge: number; nail: boole
 let handCache: { key: string; cells: HandCell[] } = { key: "", cells: [] };
 
 function handCells(f: Frame<Geo>) {
-  const push = Math.round(f.power * 12) / 12;
+  const push = Math.round(f.power * 6) / 6;
   const key = `${f.cols}x${f.rows}:${f.w}x${f.h}:${push}`;
   if (handCache.key === key) return handCache.cells;
   const { geo: g, cols, rows } = f;
@@ -154,31 +154,47 @@ function handCells(f: Frame<Geo>) {
   const ids = new Int16Array(cols * rows);
   const zs = new Float32Array(cols * rows);
   const cells: HandCell[] = new Array(cols * rows).fill(null);
+  // Z-buffer rasterisation: each sphere only visits the cells under its projected disc,
+  // instead of every cell testing every sphere.
+  const best: (Hit | null)[] = new Array(cols * rows).fill(null);
+  const consider = (r: number, c: number, hh: Hit | null) => {
+    if (!hh) return;
+    const i = r * cols + c;
+    const b = best[i];
+    if (!b || hh.z > b.z) best[i] = hh;
+  };
+  const visit = (cx: number, cy: number, rr: number, test: (lx: number, ly: number) => Hit | null) => {
+    // cx, cy, rr in local units → cell bounds.
+    const c0 = Math.max(0, Math.floor((g.ox + (cx - rr) * g.unit) / cw));
+    const c1 = Math.min(cols - 1, Math.ceil((g.ox + (cx + rr) * g.unit) / cw));
+    const r0 = Math.max(0, Math.floor((g.oy - (cy + rr) * g.unit) / ch));
+    const r1 = Math.min(rows - 1, Math.ceil((g.oy - (cy - rr) * g.unit) / ch));
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) consider(r, c, test(((c + 0.5) * cw - g.ox) / g.unit, -((r + 0.5) * ch - g.oy) / g.unit));
+  };
+  for (const sp of list) {
+    const k = EYE / (EYE - sp.c[2]);
+    visit(sp.c[0] * k, sp.c[1] * k, sp.r * k, (lx, ly) => hitSphere(lx, ly, sp));
+  }
+  for (const e of ellipsoids) {
+    const k = EYE / (EYE - e.c[2]);
+    visit(e.c[0] * k, e.c[1] * k, Math.max(e.r[0], e.r[1]) * k, (lx, ly) => hitEllipsoid(lx, ly, e));
+  }
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const lx = ((c + 0.5) * cw - g.ox) / g.unit;
-      const ly = -((r + 0.5) * ch - g.oy) / g.unit;
-      let best: Hit | null = null;
-      for (const sp of list) {
-        const hh = hitSphere(lx, ly, sp);
-        if (hh && (!best || hh.z > best.z)) best = hh;
-      }
-      for (const e of ellipsoids) {
-        const hh = hitEllipsoid(lx, ly, e);
-        if (hh && (!best || hh.z > best.z)) best = hh;
-      }
-      if (!best) continue;
-      const lambert = Math.max(0, best.n[0] * LIGHT[0] + best.n[1] * LIGHT[1] + best.n[2] * LIGHT[2]);
+      const hb = best[r * cols + c];
+      if (!hb) continue;
+      const lambert = Math.max(0, hb.n[0] * LIGHT[0] + hb.n[1] * LIGHT[1] + hb.n[2] * LIGHT[2]);
       // Fingernail on top of the pointing fingertip.
-      const nail = best.id === TIP_ID && best.t > 0.5 && best.n[1] > 0.35 && best.n[0] < 0.3 && best.n[2] > 0.25;
+      const nail = hb.id === TIP_ID && hb.t > 0.5 && hb.n[1] > 0.35 && hb.n[0] < 0.3 && hb.n[2] > 0.25;
       // Joint creases where a finger segment begins.
-      const joint = best.mat === "skin" && best.t > 0.01 && best.t < 0.07 && (INDEX_IDS.has(best.id) || best.id > 8);
+      const joint = hb.mat === "skin" && hb.t > 0.01 && hb.t < 0.07 && (INDEX_IDS.has(hb.id) || hb.id > 8);
       // Depth cue: nearer forms are brighter, so the fingertip leads and the arm falls back.
-      const near = Math.max(0, Math.min(1, (best.z + 0.3) / 0.78));
-      const light = Math.min(1, (0.06 + Math.pow(lambert, 1.2) * 0.88 + Math.max(0, best.n[2]) * 0.08) * (best.mat === "skin" ? 0.5 + near * 0.7 : 0.2 + near * 0.9));
-      ids[r * cols + c] = best.id;
-      zs[r * cols + c] = best.z;
-      cells[r * cols + c] = { id: best.id, light, mat: best.mat, edge: 0, nail, joint };
+      const near = Math.max(0, Math.min(1, (hb.z + 0.3) / 0.78));
+      const light = Math.min(1, (0.06 + Math.pow(lambert, 1.2) * 0.88 + Math.max(0, hb.n[2]) * 0.08) * (hb.mat === "skin" ? 0.5 + near * 0.7 : 0.2 + near * 0.9));
+      ids[r * cols + c] = hb.id;
+      zs[r * cols + c] = hb.z;
+      cells[r * cols + c] = { id: hb.id, light, mat: hb.mat, edge: 0, nail, joint };
     }
   }
   for (let r = 0; r < rows; r++) {
@@ -255,6 +271,7 @@ export default function PointScene({ power }: { power: MotionValue<number> }) {
       shade={shade}
       power={power}
       cell={5}
+      still
     />
   );
 }

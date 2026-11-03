@@ -166,7 +166,6 @@ body {
   padding: 2.5rem;
   border: 1px solid rgba(250, 246, 241, 0.18);
   background: rgba(16, 13, 20, 0.55);
-  backdrop-filter: blur(3px);
   min-height: 22rem;
 }
 .beats {
@@ -384,9 +383,24 @@ body {
   inset: 0;
   pointer-events: none;
 }
+.day-sky {
+  position: absolute;
+  inset: 0;
+}
+.sky-0 { background: linear-gradient(180deg, #2a2531 0%, #7a5a3a 65%, #ffb23f 100%); }
+.sky-1 { background: linear-gradient(180deg, #241c2c 0%, #8a3a24 60%, #ff7d3a 100%); }
+.sky-2 { background: linear-gradient(180deg, #18141f 0%, #4a1f2c 55%, #ff5a1f 100%); }
+.sky-3 { background: linear-gradient(180deg, #120f18 0%, #2a1c2c 65%, #6a2a24 100%); }
+.sky-4 { background: linear-gradient(180deg, #0b090e 0%, #100d14 70%, #1c1726 100%); }
+/* A full-height track moved by transform; the disc sits at its top edge. */
+.day-track {
+  position: absolute;
+  inset: 0;
+}
 .day-sun,
 .day-moon {
   position: absolute;
+  top: 0;
   right: 18%;
   width: 7rem;
   height: 7rem;
@@ -395,7 +409,6 @@ body {
 }
 .day-sun {
   background: radial-gradient(circle, #ffe2a8 0%, #ffb04a 45%, rgba(255, 120, 40, 0) 70%);
-  filter: blur(1px);
 }
 .day-moon {
   background: transparent;
@@ -627,6 +640,12 @@ body {
 .stage-art-bleed {
   inset: 0;
 }
+.stage-night {
+  position: absolute;
+  inset: 0;
+  background: #07060a;
+  pointer-events: none;
+}
 .stage-shade-hero {
   background: linear-gradient(90deg, rgba(16, 13, 20, 0.9) 0%, rgba(16, 13, 20, 0.7) 30%, rgba(16, 13, 20, 0.25) 55%, transparent 70%),
     linear-gradient(0deg, rgba(16, 13, 20, 0.6), transparent 30%);
@@ -747,12 +766,55 @@ body {
   .stage-copy-left,
   .stage-copy-card,
   .day-copy {
-    left: 1.25rem;
-    right: 1.25rem;
+    left: 1rem;
+    right: 1rem;
     width: auto;
     top: auto;
-    bottom: 4.5rem;
+    bottom: 1.25rem;
     transform: none;
+  }
+  /* Text gets its own solid backing so it never fights the art. */
+  .stage-copy-left .beat,
+  .day-copy {
+    padding: 1.1rem 1.15rem;
+    background: rgba(16, 13, 20, 0.86);
+    border: 1px solid rgba(243, 239, 230, 0.08);
+    border-radius: 4px;
+  }
+  .serif-xl {
+    font-size: 1.85rem;
+  }
+  .serif-lg {
+    font-size: 1.3rem;
+  }
+  .arabic {
+    font-size: 4rem;
+  }
+  .definition {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+  .dropcap::first-letter {
+    font-size: 2.4em;
+  }
+  /* Art shrinks into the top of the screen; the hero keeps its full-bleed sunset. */
+  .stage-art-scene {
+    inset: 3.5rem 0 42% 0;
+  }
+  .track-art {
+    height: 30vh !important;
+  }
+  .track-hook {
+    font-size: 1.15rem;
+    margin: 0.75rem 0 0.5rem;
+  }
+  .track-blurb {
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .track-rule {
+    font-size: 0.72rem;
+    margin-top: 0.75rem;
   }
   .stage-copy-card {
     padding: 1.5rem;
@@ -809,10 +871,16 @@ body {
     grid-template-columns: 1fr;
   }
   .epilogue-hand {
-    height: 46vh;
+    height: 32vh;
     order: -1;
   }
   .stage-art-right-wide {
-    inset: 4rem 0 30% 0;
+    inset: 3.5rem 0 45% 0;
+  }
+  .day-trophy {
+    height: 22vh !important;
+  }
+  .day-log {
+    font-size: 0.8rem;
   }
 }
