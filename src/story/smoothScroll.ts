@@ -5,6 +5,9 @@ export let lenis: Lenis | null = null;
 
 export function startSmoothScroll() {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  // Touch screens use touchPager.ts (one swipe = one beat, native scroll on the long paper page);
+  // smoothing touch scroll with Lenis is what makes phones feel floaty.
+  if (window.matchMedia("(pointer: coarse)").matches) return;
   lenis = new Lenis({ autoRaf: true, lerp: 0.09 });
   if (import.meta.env.DEV) (window as unknown as { lenis: Lenis }).lenis = lenis;
 }

@@ -49,7 +49,7 @@ function Scene() {
 
 export default function BeyondTheBubble() {
   return (
-    <Chapter id="beyond-the-bubble" length={2.2}>
+    <Chapter id="beyond-the-bubble" length={2.2} snaps={[0, 0.6, 1]}>
       <Scene />
     </Chapter>
   );

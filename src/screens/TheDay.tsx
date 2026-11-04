@@ -88,7 +88,7 @@ function Scene() {
 
 export default function TheDay() {
   return (
-    <Chapter id="the-day" length={2.6}>
+    <Chapter id="the-day" length={2.6} snaps={[0, 0.25, 0.5, 0.75, 1]}>
       <Scene />
     </Chapter>
   );

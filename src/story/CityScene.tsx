@@ -1,6 +1,7 @@
 import type { MotionValue } from "motion/react";
 import AsciiScene, { region, type Cell, type Frame, type Shaded } from "./AsciiScene";
 import { rng } from "./rng";
+import { stageFrame } from "./stageFrame";
 
 // The noise: a skyline of towers and glowing screens under a rain of feed glyphs.
 // `power` (1 → 0) is how much light is left; as it drops, windows die and static takes over.
@@ -15,7 +16,33 @@ const RAIN = "01<>/\\|#%&$@!?{}[]=+*";
 const FEED = ["LIKE", "SHARE", "99+", "LIVE", "AD", "NEW", "FOR YOU", "▶", "TRENDING", "SWIPE"];
 
 type Phone = { x: number; y: number; w: number; h: number; angle: number; speed: number; hue: number };
-type Geo = { horizon: number; phones: Phone[] };
+type Geo = { horizon: number; phones: Phone[]; eggPhone: number };
+
+// Easter egg: once in a while, one post on the biggest phone is a real photo, drawn in ASCII from its own
+// pixels like every other post. Deliberately subtle: no special likes, no highlight. Loaded only when this
+// scene is first laid out.
+const EGG_N = 64;
+let egg: Uint8ClampedArray | null = null;
+let eggLoading = false;
+function loadEgg() {
+  if (eggLoading || typeof window === "undefined") return;
+  eggLoading = true;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas");
+    c.width = c.height = EGG_N;
+    const x = c.getContext("2d", { willReadFrequently: true })!;
+    x.drawImage(img, 0, 0, EGG_N, EGG_N);
+    egg = x.getImageData(0, 0, EGG_N, EGG_N).data;
+  };
+  img.src = "/brand/easteregg-feed.png";
+}
+const isEggCard = (card: number) => card % 7 === 4;
+// The photo is cover-cropped to the post's shape: full width, rows 7%–72% (the face sits in the upper half).
+const EGG_TOP = 0.07;
+const EGG_SPAN = 0.65;
+const EGG_RAMP = " .:-=+*#%@";
+
 
 function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   const rand = rng(7);
@@ -39,19 +66,31 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   }
 
   // A collage of phones floating over the city, each scrolling its own feed.
+  // Wide screens spread them across; tall screens (phones) stack a bigger collage above the text card.
+  const fr = stageFrame(w, h);
   const phones: Phone[] = [];
-  const spots: [number, number, number][] = [
-    [0.62, 0.3, 1.0],
-    [0.84, 0.42, 0.85],
-    [0.47, 0.55, 0.7],
-    [0.74, 0.7, 0.95],
-    [0.93, 0.15, 0.6],
-    [0.36, 0.2, 0.55],
-    [0.55, 0.85, 0.6],
-  ];
+  const spots: [number, number, number][] = fr.tall
+    ? [
+        [0.27, 0.12, 0.8],
+        [0.74, 0.2, 0.7],
+        [0.5, 0.4, 0.95],
+        [0.2, 0.62, 0.75],
+        [0.8, 0.7, 0.85],
+        [0.54, 0.88, 0.6],
+      ]
+    : [
+        [0.62, 0.3, 1.0],
+        [0.84, 0.42, 0.85],
+        [0.47, 0.55, 0.7],
+        [0.74, 0.7, 0.95],
+        [0.93, 0.15, 0.6],
+        [0.36, 0.2, 0.55],
+        [0.55, 0.85, 0.6],
+      ];
   spots.forEach(([fx, fy, k], i) => {
-    const ph = Math.min(h * 0.42, w * 0.3) * k;
-    phones.push({ x: w * fx, y: h * fy, w: ph * 0.5, h: ph, angle: (rand() - 0.5) * 0.5, speed: 25 + rand() * 40, hue: i });
+    const ph = (fr.tall ? Math.min(fr.h * 0.46, w * 0.52) : Math.min(h * 0.42, w * 0.3)) * k;
+    const cy = fr.tall ? fr.top + fr.h * fy : h * fy;
+    phones.push({ x: w * fx, y: cy, w: ph * 0.5, h: ph, angle: (rand() - 0.5) * 0.5, speed: 25 + rand() * 40, hue: i });
   });
   phones.forEach((p, i) => {
     ctx.save();
@@ -67,22 +106,38 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
     ctx.fill();
     ctx.restore();
   });
-  return { horizon, phones };
+  loadEgg();
+  // The egg shows up on the biggest phone.
+  let eggPhone = 0;
+  phones.forEach((p, i) => p.h > phones[eggPhone].h && (eggPhone = i));
+  return { horizon, phones, eggPhone };
 }
 
 const CARD_TINTS = [ORANGE, GOLD, BLUE, "190,120,230", "120,200,200"];
 
 // One cell of a scrolling social feed, in the phone's screen space (u: 0..1 across, py: px down the feed).
-function feed(u: number, py: number, cardH: number, card: number, t: number, glitch: boolean): Shaded {
+function feed(u: number, py: number, cardH: number, card: number, t: number, glitch: boolean, eggCard = false): Shaded {
   const y = (((py % cardH) + cardH) % cardH) / cardH; // position within the post
   const tint = CARD_TINTS[(card * 7 + 3) % CARD_TINTS.length];
-  if (glitch) return [RAIN[(card * 31 + Math.floor(t * 20)) % RAIN.length], tint, 0.7];
+  const isEgg = eggCard && egg !== null;
+  if (glitch && !isEgg) return [RAIN[(card * 31 + Math.floor(t * 20)) % RAIN.length], tint, 0.7];
   if (y < 0.14) {
     // Header: avatar + username + "…"
     if (u < 0.16) return [y > 0.03 && y < 0.11 ? "O" : " ", tint, 0.95];
     if (u > 0.22 && u < 0.62 && y > 0.04 && y < 0.1) return ["-", WHITE, 0.7];
     if (u > 0.86) return ["·", GRAY, 0.6];
     return null;
+  }
+  if (y < 0.66 && isEgg) {
+    const yy = (y - 0.14) / 0.52;
+    const ix = Math.min(EGG_N - 1, Math.max(0, Math.floor(u * EGG_N)));
+    const iy = Math.min(EGG_N - 1, Math.max(0, Math.floor((EGG_TOP + yy * EGG_SPAN) * EGG_N)));
+    const k = (iy * EGG_N + ix) * 4;
+    const [r, g, b] = [egg![k], egg![k + 1], egg![k + 2]];
+    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    const lift = (v: number, m: number) => Math.min(255, Math.round(v * m + 14));
+    // Same glyph-on-tile treatment as the other posts, just with the photo's colours.
+    return [EGG_RAMP[Math.min(9, Math.round(lum * 9))], `${lift(r, 1.35)},${lift(g, 1.35)},${lift(b, 1.35)}`, 0.7, `${lift(r, 0.9)},${lift(g, 0.9)},${lift(b, 0.9)}`];
   }
   if (y < 0.66) {
     // The photo: a tinted block with a soft pattern so each post looks different.
@@ -168,7 +223,7 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
       const card = Math.floor(py / cardH) + p.hue * 11;
       // As the city goes dark the feeds glitch harder.
       const glitch = ((c.seed * 7919 + Math.floor(t * 12) * 0.29) % 1) < noise * 0.12;
-      const fd = feed(u, py, cardH, card, t, glitch);
+      const fd = feed(u, py, cardH, card, t, glitch, c.aux === f.geo.eggPhone && isEggCard(card));
       return fd ? [fd[0], fd[1], fd[2], "12,10,16"] : [" ", WHITE, 0, "12,10,16"];
     }
   }
@@ -176,5 +231,5 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
 }
 
 export default function CityScene({ power }: { power: MotionValue<number> }) {
-  return <AsciiScene label="An ASCII city of towers and glowing screens under falling glyphs" paint={paint} shade={shade} power={power} cell={9} fps={24} />;
+  return <AsciiScene label="An ASCII city of towers and glowing screens under falling glyphs" paint={paint} shade={shade} power={power} cell={6.5} fps={24} />;
 }

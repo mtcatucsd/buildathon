@@ -6,8 +6,11 @@ import { event, socials } from "../data/event";
 
 export default function Epilogue() {
   const ref = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end end"] });
-  const power = useTransform(scrollYProgress, [0.1, 0.75], [0, 1]);
+  const handRef = useRef<HTMLDivElement>(null);
+  // The flame follows the torch itself: an ember as it enters, a full blaze by the time it's centred.
+  // (Tying it to the whole section left it half-grown on phones, where the section is much taller than the screen.)
+  const { scrollYProgress } = useScroll({ target: handRef, offset: ["start end", "center 60%"] });
+  const power = useTransform(scrollYProgress, [0.05, 1], [0, 1]);
 
   return (
     <section id="epilogue" ref={ref} className="epilogue" data-chapter>
@@ -23,7 +26,7 @@ export default function Epilogue() {
             {event.date} · {event.time} · {event.venue}
           </p>
         </Reveal>
-        <div className="epilogue-hand">
+        <div className="epilogue-hand" ref={handRef}>
           <TorchScene power={power} />
         </div>
       </div>

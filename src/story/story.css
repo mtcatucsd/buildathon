@@ -127,8 +127,9 @@ body {
 .chapter-stage {
   position: sticky;
   top: 0;
+  /* The tall (large) viewport: art stays full-bleed when a phone's URL bar collapses. */
   height: 100vh;
-  height: 100svh;
+  height: 100lvh;
   overflow: hidden;
 }
 .stage-art {
@@ -675,10 +676,13 @@ body {
 }
 .day-trophy {
   position: absolute;
-  right: 6%;
-  bottom: 6%;
-  width: min(34vw, 460px);
-  height: min(62vh, 560px);
+  right: 2%;
+  top: 44%;
+  bottom: auto;
+  /* As wide as the space beside the schedule allows (the art spans ~64% of this box, centred in it). */
+  width: min(760px, calc((98vw - max(16rem, 18vw) - min(38rem, 50vw) - 1.5rem) / 0.82));
+  height: min(86vh, 820px);
+  transform: translateY(-46%);
   pointer-events: none;
 }
 .madeby {
@@ -749,224 +753,6 @@ body {
   margin: 0;
 }
 
-/* ---------- small screens ---------- */
-@media (max-width: 900px) {
-  .rail,
-  .topbar-date {
-    display: none;
-  }
-  .stage-copy-left,
-  .stage-copy-card,
-  .day-copy {
-    left: 1rem;
-    right: 1rem;
-    width: auto;
-    top: auto;
-    bottom: 1.25rem;
-    transform: none;
-  }
-  /* Text gets its own solid backing so it never fights the art. */
-  .stage-copy-left .beat,
-  .day-copy {
-    padding: 1.1rem 1.15rem;
-    background: rgba(16, 13, 20, 0.86);
-    border: 1px solid rgba(243, 239, 230, 0.08);
-    border-radius: 4px;
-  }
-  .serif-xl {
-    font-size: 1.85rem;
-  }
-  .serif-lg {
-    font-size: 1.3rem;
-  }
-  .arabic {
-    font-size: 4rem;
-  }
-  .definition {
-    font-size: 1rem;
-    margin-bottom: 0.75rem;
-  }
-  /* The hero sunset fills the top ~60% so its glyphs match the laptop's size, fading into the page. */
-  /* The whole sunset, full width, at its own aspect ratio, just under the top bar. */
-  .stage-art-hero {
-    /* Centred in the space between the top bar and the ~390px text panel (never under the bar). */
-    inset: max(4.25rem, calc(4.25rem + (100svh - 4.25rem - 56.25vw - 390px) / 2)) 0 auto 0;
-    aspect-ratio: 192 / 108;
-  }
-  /* Art sits in the top of the screen, text below on its own panel. */
-  .stage-art-scene {
-    inset: 3.5rem 0 42% 0;
-  }
-  .track-art {
-    height: 30vh !important;
-  }
-  .track-hook {
-    font-size: 1.15rem;
-    margin: 0.75rem 0 0.5rem;
-  }
-  .track-blurb {
-    font-size: 0.92rem;
-    line-height: 1.5;
-  }
-  .track-rule {
-    font-size: 0.72rem;
-    margin-top: 0.75rem;
-  }
-  .stage-copy-card {
-    padding: 1.5rem;
-    min-height: 0;
-  }
-  .stage-art-right {
-    left: 0;
-  }
-  .stage-shade {
-    background: linear-gradient(0deg, rgba(16, 13, 20, 0.95) 0%, rgba(16, 13, 20, 0.6) 50%, rgba(16, 13, 20, 0.1) 100%);
-  }
-  .track {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    padding: 4.5rem 1.25rem 3.5rem;
-    gap: 1rem;
-  }
-  .track-right .track-art {
-    order: 0;
-  }
-  .track,
-  .track-right {
-    grid-template-columns: 1fr;
-  }
-  .track-art {
-    height: 42vh;
-  }
-  .art-credit {
-    display: none;
-  }
-  .day-trophy {
-    right: 50%;
-    transform: translateX(50%);
-    top: 4.5rem;
-    bottom: auto;
-    width: 60vw;
-    height: 30vh;
-  }
-  .day-orbit {
-    bottom: 68%;
-  }
-  .day-sun,
-  .day-moon {
-    right: 10%;
-    width: 4.5rem;
-    height: 4.5rem;
-  }
-  .paper-inner {
-    padding: 6rem 1.25rem 5rem;
-  }
-  .prizes,
-  .rules,
-  .epilogue-grid {
-    grid-template-columns: 1fr;
-  }
-  .epilogue-hand {
-    height: 44vh;
-    order: -1;
-  }
-  .stage-art-right-wide {
-    inset: 3.5rem 0 38% 0;
-  }
-  .day-trophy {
-    height: 22vh !important;
-  }
-  .day-log {
-    font-size: 0.8rem;
-  }
-}
-
-/* Short phones (e.g. iPhone SE): a tighter hero panel so the whole sunset stays visible above it. */
-@media (max-width: 900px) and (max-height: 720px) {
-  .reveal .eyebrow {
-    margin-bottom: 0.6rem;
-  }
-  .reveal .lockup {
-    margin-bottom: 0.75rem;
-  }
-  .reveal .lockup-manara {
-    height: 22px;
-  }
-  .reveal .lockup-replit {
-    height: 26px;
-  }
-  .reveal .lockup-mtc {
-    height: 34px;
-  }
-  .display {
-    font-size: 2.6rem;
-  }
-  .display-sub {
-    margin: 0.4rem 0 0.75rem;
-  }
-  .reveal .cta {
-    margin-top: 1rem;
-    padding: 0.75rem 1.3rem;
-  }
-}
-
-/* Phones: the trophy and the schedule stack instead of overlapping. The panel sits at the bottom
-   and the trophy fills whatever space is left above it. */
-@media (max-width: 900px) {
-  .day {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    gap: 0.75rem;
-    padding: 4.25rem 1rem 1.25rem;
-  }
-  .day-trophy {
-    position: relative;
-    inset: auto;
-    transform: none;
-    flex: 1 1 0;
-    min-height: 0;
-    width: 100%;
-    height: auto !important;
-  }
-  .day-copy {
-    position: relative;
-    inset: auto;
-    flex-shrink: 0;
-  }
-  .day-copy .serif-xl {
-    font-size: 1.5rem;
-  }
-  .day-where {
-    margin: 0.5rem 0 0.75rem;
-    font-size: 0.72rem;
-  }
-  .day-note {
-    display: none;
-  }
-  .day-log li {
-    padding: 0.28rem 0;
-  }
-}
-
-/* Phones: keep the three partner logos on one row, like the web version, scaled to fit. */
-@media (max-width: 900px) {
-  .partners {
-    flex-wrap: nowrap;
-    gap: clamp(1rem, 5vw, 1.75rem);
-    margin: 3.5rem 0 2.5rem;
-  }
-  .partners-manara {
-    height: clamp(24px, 8vw, 32px);
-  }
-  .partners-replit {
-    height: clamp(26px, 8.5vw, 34px);
-  }
-  .partners-mtc {
-    height: clamp(38px, 12vw, 50px);
-  }
-}
-
 .ascii-heart {
   color: var(--orange);
   font-weight: 600;
@@ -992,65 +778,6 @@ p, li {
   line-height: 1.2;
   color: rgba(243, 239, 230, 0.78);
   margin: 0.4rem 0 0;
-}
-@media (max-width: 900px) {
-  .track-subtitle {
-    font-size: 1.1rem;
-  }
-}
-
-/* Phones: the three prizes as a compact podium row instead of three tall stacked blocks. */
-@media (max-width: 900px) {
-  .prizes {
-    grid-template-columns: 1.25fr 1fr 1fr !important;
-    gap: 0.5rem;
-    margin: 2rem 0;
-  }
-  .prize {
-    min-height: 6.5rem;
-    padding: 0.85rem;
-  }
-  .prize-1 {
-    min-height: 8rem;
-  }
-  .prize-amount {
-    font-size: 2rem;
-  }
-}
-
-/* Phones / portrait: every animated chapter is full-bleed, like the laptop. The scenes compose their
-   subject in the upper area (see stageFrame.ts) and the text panel overlays the bottom. */
-@media (max-width: 900px) {
-  .stage-art-scene,
-  .stage-art-right-wide {
-    inset: 0;
-  }
-  .track {
-    display: block;
-    padding: 0;
-  }
-  .track-art {
-    position: absolute;
-    inset: 0;
-    height: 100% !important;
-  }
-  .track-copy {
-    position: absolute;
-    left: 1rem;
-    right: 1rem;
-    bottom: 1.25rem;
-    max-width: none;
-    padding: 1.1rem 1.15rem;
-    background: rgba(16, 13, 20, 0.86);
-    border: 1px solid rgba(243, 239, 230, 0.08);
-    border-radius: 4px;
-  }
-  .track-copy .eyebrow {
-    margin-bottom: 0.5rem;
-  }
-  .track-path-unused {
-    margin-bottom: 0.4rem;
-  }
 }
 
 /* ---------- menu sheet ---------- */
@@ -1151,12 +878,337 @@ p, li {
   line-height: 1.7;
   color: rgba(16, 13, 20, 0.6);
 }
+
+
+/* =====================================================================================================
+   Phones & tablets (≤900px). One layout: every animated chapter is full-bleed, exactly like the laptop;
+   the text sits on a solid card at the bottom, and each scene measures that card and composes its
+   subject in the space above it (see stageFrame.ts), so art and text never overlap.
+   ===================================================================================================== */
+:root {
+  --bar: 0px; /* how much taller the large viewport is than the small one (a phone's collapsing URL bar) */
+}
+@supports (height: 100lvh) {
+  :root {
+    --bar: calc(100lvh - 100svh);
+  }
+}
+@media (min-width: 901px) {
+  .track-a,
+  .track-b {
+    /* Both visible on laptop; on phones they cross-fade (below). */
+    opacity: 1 !important;
+  }
+}
+
 @media (max-width: 900px) {
+  .rail,
+  .topbar-date,
+  .scroll-cue {
+    display: none;
+  }
   .topbar-cta {
     margin-left: auto;
+  }
+
+  /* ---- text cards ---- */
+  .stage-copy-left,
+  .stage-copy-card,
+  .day-copy {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    top: auto;
+    bottom: calc(1.1rem + var(--bar));
+    transform: none;
+  }
+  .beat {
+    align-self: end;
+  }
+  .stage-copy-left .beat,
+  .day-copy,
+  .track-copy {
+    padding: 1.2rem 1.25rem;
+    background: rgba(16, 13, 20, 0.92);
+    border: 1px solid rgba(243, 239, 230, 0.1);
+    border-radius: 6px;
+  }
+
+  /* ---- type: sized for a thumb-held screen ---- */
+  .eyebrow {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+  }
+  .serif-xl {
+    font-size: clamp(2rem, 8.4vw, 2.6rem);
+  }
+  .serif-lg {
+    font-size: clamp(1.5rem, 6.2vw, 1.9rem);
+  }
+  .arabic {
+    font-size: 5rem;
+  }
+  .definition {
+    font-size: 1.2rem;
+    margin: 0.4rem 0 0.9rem;
+  }
+  .facts {
+    font-size: 0.9rem;
+  }
+  .meta {
+    font-size: 0.95rem;
+  }
+  .display {
+    font-size: min(3.3rem, 13vw);
+  }
+  .display-sub {
+    font-size: 1.15rem;
+  }
+  .cta {
+    font-size: 1rem;
+    padding: 0.95rem 1.4rem;
+  }
+
+  /* ---- hero: the sunset is full-bleed; its scene composes itself around the text card ---- */
+  .stage-art-hero,
+  .stage-art-scene,
+  .stage-art-right-wide {
+    inset: 0;
+  }
+  .stage-art-hero {
+    aspect-ratio: auto;
+  }
+  .stage-shade {
+    background: linear-gradient(0deg, rgba(16, 13, 20, 0.5) 0%, rgba(16, 13, 20, 0) 45%);
+  }
+
+  /* ---- tracks: art fills the stage; the card holds a title block and a cross-fading detail ---- */
+  .track {
+    display: block;
+    padding: 0;
+  }
+  .track-art {
+    position: absolute;
+    inset: 0;
+    height: 100% !important;
+  }
+  .track-copy {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    bottom: calc(1.1rem + var(--bar));
+    max-width: none;
+  }
+  .track-subtitle {
+    font-size: 1.3rem;
+    margin-top: 0.35rem;
+  }
+  .track-swap {
+    display: grid;
+    margin-top: 0.9rem;
+  }
+  .track-a,
+  .track-b {
+    grid-area: 1 / 1;
+  }
+  .track-a {
+    align-self: center;
+  }
+  .track-hook {
+    font-size: 1.55rem;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .track-blurb {
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+  .track-rule {
+    font-size: 0.85rem;
+    margin-top: 0.85rem;
+  }
+
+  /* ---- the day: trophy above, schedule card below ---- */
+  .day {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 4.25rem 1rem calc(1.1rem + var(--bar));
+  }
+  .day-trophy {
+    position: relative;
+    inset: auto;
+    transform: none;
+    flex: 1 1 0;
+    min-height: 0;
+    width: 100%;
+    height: auto !important;
+  }
+  .day-copy {
+    position: relative;
+    inset: auto;
+    flex-shrink: 0;
+  }
+  .day-copy .serif-xl {
+    font-size: 1.85rem;
+  }
+  .day-where {
+    margin: 0.5rem 0 0.75rem;
+    font-size: 0.8rem;
+  }
+  .day-log {
+    font-size: 0.92rem;
+  }
+  .day-log li {
+    padding: 0.38rem 0;
+  }
+  .day-note {
+    display: none;
+  }
+  .day-orbit {
+    /* The sun and moon travel in the clear band above the schedule, never under the top bar. */
+    top: 4.25rem;
+    bottom: 60%;
+  }
+  .day-sun,
+  .day-moon {
+    right: 10%;
+    width: 4.5rem;
+    height: 4.5rem;
+  }
+
+  /* ---- paper page + epilogue ---- */
+  .paper-inner {
+    padding: 6rem 1.25rem 5rem;
+  }
+  .prizes {
+    grid-template-columns: 1.25fr 1fr 1fr !important;
+    gap: 0.5rem;
+    margin: 2rem 0;
+  }
+  .prize {
+    min-height: 6.5rem;
+    padding: 0.85rem;
+  }
+  .prize-1 {
+    min-height: 8rem;
+  }
+  .prize-amount {
+    font-size: 2rem;
+  }
+  .rules,
+  .epilogue-grid {
+    grid-template-columns: 1fr;
+  }
+  .epilogue-hand {
+    height: 58vh;
+    order: -1;
+  }
+  .partners {
+    flex-wrap: nowrap;
+    gap: clamp(1rem, 5vw, 1.75rem);
+    margin: 3.5rem 0 2.5rem;
+  }
+  .partners-manara {
+    height: clamp(24px, 8vw, 32px);
+  }
+  .partners-replit {
+    height: clamp(26px, 8.5vw, 34px);
+  }
+  .partners-mtc {
+    height: clamp(38px, 12vw, 50px);
   }
   .menu-list a {
     font-size: 1.55rem;
     padding: 0.9rem 0;
+  }
+}
+
+/* Short phones (iPhone SE class): the same layout, a notch tighter so the art keeps room above the card. */
+@media (max-width: 900px) and (max-height: 720px) {
+  .stage-copy-left .beat,
+  .day-copy,
+  .track-copy {
+    padding: 0.95rem 1.05rem;
+  }
+  .eyebrow {
+    margin-bottom: 0.5rem;
+  }
+  .serif-xl {
+    font-size: 1.8rem;
+  }
+  .serif-lg {
+    font-size: 1.4rem;
+  }
+  .arabic {
+    font-size: 4rem;
+  }
+  .definition {
+    font-size: 1.05rem;
+  }
+  .track-subtitle {
+    font-size: 1.15rem;
+  }
+  .track-hook {
+    font-size: 1.25rem;
+  }
+  .track-blurb {
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .track-rule {
+    font-size: 0.78rem;
+  }
+  .day-copy .serif-xl {
+    font-size: 1.5rem;
+  }
+  .day-where {
+    display: none;
+  }
+  .day-log {
+    font-size: 0.8rem;
+  }
+  .day-log li {
+    padding: 0.28rem 0;
+  }
+  .reveal .eyebrow {
+    margin-bottom: 0.5rem;
+  }
+  .reveal .lockup {
+    margin-bottom: 0.7rem;
+  }
+  .reveal .lockup-manara {
+    height: 22px;
+  }
+  .reveal .lockup-replit {
+    height: 26px;
+  }
+  .reveal .lockup-mtc {
+    height: 34px;
+  }
+  .display {
+    font-size: 2.7rem;
+  }
+  .reveal .cta {
+    margin-top: 0.9rem;
+    padding: 0.75rem 1.2rem;
+  }
+}
+
+/* =====================================================================================================
+   Touch scrolling: see touchPager.ts. The .snap markers are invisible stops the pager glides between.
+   ===================================================================================================== */
+.snap {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (pointer: coarse) {
+  html {
+    overscroll-behavior-y: none;
   }
 }

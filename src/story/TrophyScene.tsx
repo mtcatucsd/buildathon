@@ -108,5 +108,5 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
 }
 
 export default function TrophyScene({ power }: { power: MotionValue<number> }) {
-  return <AsciiScene label="A gold ASCII trophy" paint={paint} shade={shade} power={power} cell={6} />;
+  return <AsciiScene label="A gold ASCII trophy" paint={paint} shade={shade} power={power} cell={4.2} fps={24} />;
 }

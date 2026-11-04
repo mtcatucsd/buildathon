@@ -60,7 +60,7 @@ function Scene() {
 
 export default function TheSignal() {
   return (
-    <Chapter id="the-signal" length={2.6}>
+    <Chapter id="the-signal" length={2.2} snaps={[0, 0.51, 1]}>
       <Scene />
     </Chapter>
   );

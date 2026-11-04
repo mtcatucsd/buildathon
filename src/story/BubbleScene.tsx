@@ -79,7 +79,7 @@ function standing(ctx: CanvasRenderingContext2D, x: number, floor: number, s: nu
   ctx.fillRect(x - s * 0.15, head + s * 1.1, s * 0.6, s * 0.75);
 }
 
-// Shared by the canvas and the logo overlay. Wide boxes: bubble centred, two Manara judges on the
+// Shared layout. Wide boxes: bubble centred, two Manara judges on the
 // left, the MTC judge on the right. Tall boxes (phones): a bigger bubble up top, judges in a row below.
 export function layout(w: number, h: number) {
   const portrait = w / h < 1.15;
@@ -87,13 +87,15 @@ export function layout(w: number, h: number) {
   const fr = stageFrame(w, h);
   const ah = fr.tall ? fr.h : h;
   const at = fr.tall ? fr.top : 0;
-  const r = portrait ? Math.min(w * 0.36, ah * 0.32) : Math.min(w * 0.24, h * 0.34);
+  // Portrait budget (as a share of the free height above the text card): bubble ~62%, judges ~21%, and the
+  // last ~10% left clear so the judges' feet never touch the card.
+  const r = portrait ? Math.min(w * 0.44, ah * 0.31) : Math.min(w * 0.24, h * 0.34);
   const cx = w / 2;
-  const cy = portrait ? at + r + ah * 0.04 : h * 0.47;
+  const cy = portrait ? at + r + ah * 0.02 : h * 0.47;
   const floor = cy + r * 0.98;
   const ps = r * 0.17;
   const js = ps * (portrait ? 1.15 : 1.0);
-  const judgeFloor = portrait ? at + ah * 0.99 : floor;
+  const judgeFloor = portrait ? at + ah * 0.9 : floor;
   const spots: [number, Org][] = portrait
     ? [
         [-0.95, "manara"],
@@ -360,16 +362,23 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
     }
   }
 
+  // The bubble (glass, cracks, shards) never paints over the judges: they stand outside it.
+  const isFigure = c.region === R.JUDGE || c.region === R.JHEAD || c.region === R.CLIPBOARD;
+  // Gone completely once it has broken: no rim, no shards left lingering.
+  const shardFade = Math.max(0, 1 - shatter * 1.2);
+
   // Glass and shards.
-  if (shatter <= 0) {
+  if (isFigure) {
+    // (nothing: fall through to the figures below)
+  } else if (shatter <= 0) {
     if (crack > 0 && crackMap(f, crack)[c.row * f.cols + c.col]) {
       const glint = Math.sin(c.col * 1.7 + c.row * 0.9 - t * 4) > 0.8;
       return [glint ? "*" : "xX/\\"[Math.floor(c.seed * 4)], glint ? CREAM : mix(CREAM, LAMP, 0.3), 0.95];
     }
     const gl = glass(u, v, t, 0);
     if (gl) return gl;
-  } else {
-    // Each shard is a Voronoi cell of the sphere, translated outward and fading.
+  } else if (shardFade > 0.02) {
+    // Each shard is a Voronoi cell of the sphere, translated outward and fading to nothing.
     const vo = owner(g.shards);
     for (let i = 0; i < g.shards.length; i++) {
       const sh = g.shards[i];
@@ -381,7 +390,7 @@ function shade(c: Cell, f: Frame<Geo>): Shaded {
       const gy = Math.min(VG - 1, Math.max(0, Math.floor(((sv + 1) / 2) * VG)));
       if (vo.owner[gy * VG + gx] !== i) continue;
       const nd = vo.dist[gy * VG + gx];
-      const fade = 1 - shatter * 0.55;
+      const fade = shardFade;
       const gl = glass(su, sv, t + sh.spin, shatter);
       if (gl) return [gl[0], gl[1], gl[2] * fade];
       // Shard edges catch the light.

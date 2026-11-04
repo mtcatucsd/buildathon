@@ -110,7 +110,8 @@ const BOXES = HAND.map((pr) =>
 type Geo = { cx: number; cupY: number; cupW: number; s: number; ox: number; oy: number; unit: number; tilt: number };
 
 function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
-  const s = Math.min(w * 0.9, h * 0.95);
+  // The full blaze reaches about 1.65× the torch size above the bottom edge; size it so the tip always fits.
+  const s = Math.min(w * 0.9, h * 0.57);
   const unit = s * 1.25; // px per local unit
   const tilt = (-7 * Math.PI) / 180;
   const ox = w * 0.5;

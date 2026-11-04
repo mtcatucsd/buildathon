@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { MotionValue } from "motion/react";
 import { device } from "./device";
 import { rng } from "./rng";
+import { findPanel, panelTop, setPanelTop } from "./stageFrame";
 
 // Engine for drawn (procedural) ASCII scenes.
 // 1. `paint` draws the scene's shapes into a stencil using region ids (see `region()`).
@@ -90,6 +91,9 @@ export default function AsciiScene<G>({
     let lastKey: number | string | undefined;
     let lastPower = -1;
     let laidOut = "";
+    let drawn: string[] = []; // what each cell currently shows on the canvas
+    let cardTop = 0; // where the text card starts (phones), so the subject is composed above it
+    const panel = findPanel(canvas);
     let W = 0;
     let H = 0;
     let cols = 0;
@@ -106,6 +110,7 @@ export default function AsciiScene<G>({
       sctx.setTransform(1, 0, 0, 1, 0, 0);
       sctx.clearRect(0, 0, cols * SS, rows * SS);
       sctx.setTransform((cols * SS) / W, 0, 0, (rows * SS) / H, 0, 0);
+      setPanelTop(cardTop);
       geo = paintRef.current(sctx, W, H, p, t);
       const px = sctx.getImageData(0, 0, cols * SS, rows * SS).data;
       // Each cell takes the most common *exact* region value in its 3×3 block; antialiased
@@ -158,8 +163,10 @@ export default function AsciiScene<G>({
     const layout = () => {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
-      if (!w || !h || laidOut === `${w}x${h}`) return false;
-      laidOut = `${w}x${h}`;
+      const top = panelTop(panel);
+      if (!w || !h || laidOut === `${w}x${h}x${top}`) return false;
+      laidOut = `${w}x${h}x${top}`;
+      cardTop = top;
       W = w;
       H = h;
       const dpr = device.dpr;
@@ -173,6 +180,7 @@ export default function AsciiScene<G>({
       stencil.width = cols * SS;
       stencil.height = rows * SS;
       cells = [];
+      drawn = [];
       const rand = rng(cols * 7919 + rows);
       for (let r = 0; r < rows; r++)
         for (let c = 0; c < cols; c++)
@@ -202,39 +210,40 @@ export default function AsciiScene<G>({
         }
       }
       const frame: Frame<G> = { t, power: p, w: W, h: H, cols, rows, geo };
-      ctx.clearRect(0, 0, W, H);
       const sh = shadeRef.current;
-      // Backgrounds are drawn as horizontal runs (one rect per run of equal colour), glyphs per cell.
-      // Glyphs are queued so all background rects land underneath them.
-      let style = "";
-      let runStyle = "";
-      let runX = 0;
-      let runY = -1;
-      let runEnd = 0;
-      const flush = () => {
-        if (!runStyle) return;
-        if (runStyle !== style) ctx.fillStyle = style = runStyle;
-        ctx.fillRect(runX, runY - ch / 2, runEnd - runX + 0.5, ch + 0.5);
-        runStyle = "";
-      };
-      const glyphs: (string | number)[] = [];
-      for (const c of cells) {
-        const s = sh(c, frame);
-        const bg = s && s[3] ? rgba(s[3], 1) : "";
-        const x0 = c.x - cw / 2;
-        if (bg !== runStyle || c.y !== runY) {
-          flush();
-          if (bg) ((runStyle = bg), (runX = x0), (runY = c.y));
-        }
-        if (bg) runEnd = x0 + cw;
-        if (!s || s[2] <= 0.01 || s[0] === " ") continue;
-        glyphs.push(rgba(s[1], s[2]), s[0], c.x, c.y);
+
+      // Only cells whose output changed since the last frame are redrawn (typically 0–10% of them):
+      // each is cleared (or filled with its background) and its glyph drawn again. A full redraw only
+      // happens after a layout change.
+      if (!drawn.length) {
+        drawn = new Array(cells.length).fill("~");
+        ctx.clearRect(0, 0, W, H);
       }
-      flush();
-      for (let i = 0; i < glyphs.length; i += 4) {
-        const fg = glyphs[i] as string;
+      let style = "";
+      const half = cw / 2;
+      const halfH = ch / 2;
+      for (let i = 0; i < cells.length; i++) {
+        const c = cells[i];
+        const s = sh(c, frame);
+        let key = "";
+        if (s) {
+          key = s[3] ? `${s[0]}|${rgba(s[1], s[2])}|${s[3]}` : s[2] > 0.01 && s[0] !== " " ? `${s[0]}|${rgba(s[1], s[2])}` : "";
+        }
+        if (key === drawn[i]) continue;
+        drawn[i] = key;
+        const x0 = c.x - half;
+        const y0 = c.y - halfH;
+        if (s && s[3]) {
+          const bg = rgba(s[3], 1);
+          if (bg !== style) ctx.fillStyle = style = bg;
+          ctx.fillRect(x0, y0, cw + 0.5, ch + 0.5);
+        } else {
+          ctx.clearRect(x0, y0, cw + 0.5, ch + 0.5);
+        }
+        if (!s || s[2] <= 0.01 || s[0] === " ") continue;
+        const fg = rgba(s[1], s[2]);
         if (fg !== style) ctx.fillStyle = style = fg;
-        ctx.fillText(glyphs[i + 1] as string, glyphs[i + 2] as number, glyphs[i + 3] as number);
+        ctx.fillText(s[0], c.x, c.y);
       }
     };
 
@@ -261,6 +270,7 @@ export default function AsciiScene<G>({
     };
     const ro = new ResizeObserver(prepare);
     ro.observe(canvas);
+    if (panel) ro.observe(panel); // the card can change size (fonts load, window resizes)
     const nearIo = new IntersectionObserver(([e]) => {
       near = e.isIntersecting;
       prepare();

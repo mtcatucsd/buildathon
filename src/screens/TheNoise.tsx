@@ -41,7 +41,7 @@ function Scene() {
 
 export default function TheNoise() {
   return (
-    <Chapter id="the-noise" length={2.4}>
+    <Chapter id="the-noise" length={2.2} snaps={[0, 0.43, 0.67, 1]}>
       <Scene />
     </Chapter>
   );
