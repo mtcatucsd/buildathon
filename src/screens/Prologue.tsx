@@ -14,6 +14,7 @@ function Scene() {
   // Phones show the whole picture, so no zoom-in (it would crop the edges again).
   const scale = useTransform(progress, [0, 1], device.small ? [1, 1] : [1.02, 1.1]);
   const lift = useTransform(progress, [0, 1], [0, -40]);
+  const cue = useTransform(progress, [0, 0.12], [1, 0]); // fades out as soon as you start scrolling
 
   return (
     <>
@@ -23,6 +24,10 @@ function Scene() {
       <motion.div className="stage-night" style={{ opacity: night }} />
       <div className="stage-shade stage-shade-hero" />
       <div className="stage-copy stage-copy-left">
+        {/* Phones: sits just above the text card (laptops have the chapter rail instead). */}
+        <motion.p className="scroll-cue" style={{ opacity: cue }} aria-hidden="true">
+          scroll for more <span className="scroll-cue-arrow">↓</span>
+        </motion.p>
         <motion.div className="beats" style={{ y: lift }}>
           <div className="beat">
             <div className="reveal">

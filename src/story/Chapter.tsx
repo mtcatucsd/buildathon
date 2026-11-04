@@ -1,5 +1,10 @@
 import { createContext, useContext, useRef, type ReactNode } from "react";
 import { useScroll, type MotionValue } from "motion/react";
+import { device } from "./device";
+
+// Phones scroll natively (with momentum), so a pinned scene there is this fraction of its laptop length:
+// one or two flicks carry you through a scene instead of a long drag.
+const PHONE_LENGTH = 0.55;
 
 // A chapter is a tall section whose content stays pinned while you scroll through it.
 // Its scroll progress (0 → 1) drives every animation inside.
@@ -24,7 +29,8 @@ type Props = {
   children: ReactNode;
 };
 
-export default function Chapter({ id, length = 3, className = "", snaps = [0], offset, children }: Props) {
+export default function Chapter({ id, length: fullLength = 3, className = "", snaps = [0], offset, children }: Props) {
+  const length = device.small && fullLength > 1 ? 1 + (fullLength - 1) * PHONE_LENGTH : fullLength;
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: offset ?? ["start start", "end end"] });
   const travel = (length - 1) * 100; // vh the pinned stage travels
