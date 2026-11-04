@@ -8,9 +8,8 @@ import { findPanel, panelTop } from "./stageFrame";
 // A minimal player for the piece, in its original look: halftone dots at full resolution, exactly as
 // on ascii-magic.com.
 //  · Laptops: the picture covers the screen (only the cells actually on screen are painted).
-//  · Phones: the WHOLE picture is shown, centred in the space above the text card, and the sky and sea
-//    carry on past its edges as dimmed mirror reflections, so the art still fills the entire screen.
-//    The reflections are painted once; only the picture itself animates.
+//  · Phones: the picture (palms kept, ~10% trimmed off each side) sits at the top of the screen and fades
+//    into the dark behind the text card below it.
 type Frame = { text: string; color: string };
 const meta = oceanSunset.meta as { cols: number; rows: number; palette: Record<string, string>; dots?: Record<string, unknown> };
 
@@ -19,37 +18,6 @@ const PALETTE = Object.entries(meta.palette).map(([key, hex]) => ({
   rgb: [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)),
 }));
 const RGB = new Map(PALETTE.map((p) => [p.key, p.rgb]));
-
-// `n` rows continuing the picture past its top or bottom edge, built from its outer band of rows (the bottom one ripples
-// sideways like a reflection on water). Painted with the same dot painter as the picture itself, so the
-// extension is the picture's own texture: palm fronds overhead, the sunset's reflection on the sea below.
-function mirror(src: Frame, side: "top" | "bottom", n: number, K: number): Frame {
-  const T = src.text.split("\n").map((r) => [...r]);
-  const C = src.color.split("\n").map((r) => [...r]);
-  const R = T.length;
-  const cols = T[0].length;
-  const text: string[] = [];
-  const color: string[] = [];
-  for (let k = 0; k < n; k++) {
-    // Bounce back and forth within the picture's outer K rows only (sky above, sea below), so the
-    // extension never repeats the sun.
-    const m = k % (2 * K);
-    const idx = m < K ? m : 2 * K - 1 - m;
-    const row = side === "top" ? idx : R - 1 - idx;
-    const shift = side === "bottom" ? Math.round(Math.sin(k * 0.45) * Math.min(6, 1 + k * 0.08)) : 0;
-    let t = "";
-    let c = "";
-    for (let col = 0; col < cols; col++) {
-      const sc = Math.min(cols - 1, Math.max(0, col + shift));
-      t += T[row][sc];
-      c += C[row][sc];
-    }
-    text.push(t);
-    color.push(c);
-  }
-  if (side === "top") (text.reverse(), color.reverse());
-  return { text: text.join("\n"), color: color.join("\n") };
-}
 
 function crop(f: Frame, c0: number, c1: number, r0: number, r1: number): Frame {
   const T = f.text.split("\n").slice(r0, r1);
@@ -60,16 +28,11 @@ function crop(f: Frame, c0: number, c1: number, r0: number, r1: number): Frame {
 export default function SunsetScene({ className = "" }: { className?: string }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const bgRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const box = boxRef.current!;
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
-    // The surroundings live on their own canvas, painted once: the stock dot painter writes a full-size
-    // pixel buffer, which would erase anything else drawn on the picture's canvas.
-    const bg = bgRef.current!;
-    const bgCtx = bg.getContext("2d")!;
     const draw = (oceanSunset.default as unknown as () => (t: number) => Frame)();
     const look = { lift: false, ...(meta.dots ?? {}) }; // the piece's own halftone tuning
     const drawMode = renderMode(meta, look);
@@ -106,13 +69,6 @@ export default function SunsetScene({ className = "" }: { className?: string }) 
         canvas.style.height = `${h}px`;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       };
-      bg.width = Math.round(W * dpr);
-      bg.height = Math.round(H * dpr);
-      bg.style.width = `${W}px`;
-      bg.style.height = `${H}px`;
-      bgCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      bgCtx.clearRect(0, 0, W, H);
-
       // How much of the picture's width "cover" would crop on this screen. On a landscape laptop that's a
       // sliver; on any portrait screen (a phone, or an iPad held upright) it's most of the picture, losing
       // both palm trees. Whenever it would lose more than ~20%, show the whole picture instead.
@@ -120,38 +76,22 @@ export default function SunsetScene({ className = "" }: { className?: string }) 
       const showAll = card > 0 || W / (meta.cols * cover) < 0.8;
 
       if (showAll) {
-        // Phones and portrait tablets: the picture slightly zoomed (about 10% cropped off each side, so the
-        // palms stay), sitting just above the text card, with its own sky continuing above it and its sea
-        // below, so the whole screen is the scene.
-        const d = W / (meta.cols * 0.8);
+        // Phones and portrait tablets: the picture zoomed in to cover the whole space above the text card
+        // (centred on the sun, the sides cropped), running a little under the card's top edge.
+        const areaH = (card > 0 ? card : H) + 24;
+        const d = Math.max(W / meta.cols, areaH / meta.rows);
         const bandH = meta.rows * d;
         const ox = (W - meta.cols * d) / 2;
         const c0 = Math.max(0, Math.floor(-ox / d));
         const c1 = Math.min(meta.cols, Math.ceil((W - ox) / d));
         const x = ox + c0 * d;
-        const y = card > 0 ? Math.max(56, card - bandH - 12) : Math.max(56, (H - bandH) * 0.42);
+        const y = areaH - bandH; // bottom-aligned to the card, so the sea meets the card
         view = { c0, c1, r0: 0, r1: meta.rows, d, x, y: 0, W, H: bandH };
         place(0, y, W, bandH);
-        const first = draw(0);
-        const above = Math.ceil(y / d);
-        const below = Math.ceil((H - y - bandH) / d);
-        // Each strip gets its own buffer: the dot painter rewrites its whole canvas, so painting both
-        // strips on one canvas would erase the first.
-        const strip = (f: Frame, top: number, rows: number) => {
-          const off = document.createElement("canvas");
-          off.width = Math.round(W * dpr);
-          off.height = Math.round(rows * d * dpr);
-          const o = off.getContext("2d")!;
-          o.setTransform(dpr, 0, 0, dpr, 0, 0);
-          paint(o, crop(f, c0, c1, 0, rows), meta.palette, { ...look, x, y: 0, cw: d, ch: d, mode: drawMode, ink: "#e4e4e7", atlas, dpr });
-          bgCtx.drawImage(off, 0, top, W, rows * d);
-        };
-        if (above > 0) strip(mirror(first, "top", above, 22), y - above * d, above);
-        if (below > 0) strip(mirror(first, "bottom", below, 18), y + bandH, below);
-        // Fade the extensions so the picture stays the focus: full strength where they meet it.
-        const mask = `linear-gradient(to bottom, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.85) ${Math.round(y * 0.75)}px, #000 ${Math.round(y)}px, #000 ${Math.round(y + bandH)}px, rgba(0,0,0,0.75) ${Math.round(y + bandH + (H - y - bandH) * 0.4)}px, rgba(0,0,0,0.45) ${H}px)`;
-        bg.style.maskImage = mask;
-        bg.style.webkitMaskImage = mask;
+        // Soften the picture's bottom edge so it melts into the card instead of ending in a hard line.
+        const mask = `linear-gradient(to bottom, #000 0px, #000 ${Math.round(bandH * 0.85)}px, transparent ${Math.round(bandH)}px)`;
+        canvas.style.maskImage = mask;
+        canvas.style.webkitMaskImage = mask;
       } else {
         // Landscape screens: the picture covers the screen; paint only the cells that are on screen.
         const d = cover;
@@ -163,7 +103,7 @@ export default function SunsetScene({ className = "" }: { className?: string }) 
         const r1 = Math.min(meta.rows, Math.ceil((H - oy) / d));
         view = { c0, c1, r0, r1, d, x: ox + c0 * d, y: oy + r0 * d, W, H };
         place(0, 0, W, H);
-        bg.style.maskImage = bg.style.webkitMaskImage = "none";
+        canvas.style.maskImage = canvas.style.webkitMaskImage = "none";
       }
       render(performance.now());
     };
@@ -204,7 +144,6 @@ export default function SunsetScene({ className = "" }: { className?: string }) 
 
   return (
     <div ref={boxRef} className={`sunset ${className}`} aria-hidden="true">
-      <canvas ref={bgRef} className="sunset-canvas" />
       <canvas ref={canvasRef} className="sunset-canvas" />
     </div>
   );
