@@ -1,10 +1,14 @@
 import { createContext, useContext, useRef, type ReactNode } from "react";
 import { useScroll, type MotionValue } from "motion/react";
 import { device } from "./device";
+import { useSlewed } from "./useSlewed";
 
 // Phones scroll natively (with momentum), so a pinned scene there is this fraction of its laptop length:
 // one or two flicks carry you through a scene instead of a long drag.
 const PHONE_LENGTH = 0.55;
+// On phones the story plays at no more than this many viewport-heights of scrolling per second, however
+// hard you flick, so text beats can't be skipped past. (Lower = more delay between beats.)
+const PHONE_MAX_VH_PER_SEC = 70;
 
 // A chapter is a tall section whose content stays pinned while you scroll through it.
 // Its scroll progress (0 → 1) drives every animation inside.
@@ -26,19 +30,31 @@ type Props = {
   snaps?: number[];
   // Which scroll range maps to progress 0 → 1. The hero uses "start → leaves the screen".
   offset?: NonNullable<Parameters<typeof useScroll>[0]>["offset"];
+  // Phones only: pinned scroll distance in viewport heights, replacing the shortened default. For scenes
+  // with several text beats, which need room for each beat to be read before the next arrives.
+  phoneTravel?: number;
   children: ReactNode;
 };
 
-export default function Chapter({ id, length: fullLength = 3, className = "", snaps = [0], offset, children }: Props) {
-  const length = device.small && fullLength > 1 ? 1 + (fullLength - 1) * PHONE_LENGTH : fullLength;
+export default function Chapter({ id, length: fullLength = 3, className = "", snaps = [0], offset, phoneTravel, children }: Props) {
+  const length = !device.small
+    ? fullLength
+    : phoneTravel !== undefined
+      ? 1 + phoneTravel / 100
+      : fullLength > 1
+        ? 1 + (fullLength - 1) * PHONE_LENGTH
+        : fullLength;
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: offset ?? ["start start", "end end"] });
   const travel = (length - 1) * 100; // vh the pinned stage travels
+  // How many vh of scrolling progress 0 → 1 spans (the hero's range also covers its exit).
+  const spanVh = Math.max(40, offset ? length * 100 : travel);
+  const progress = useSlewed(scrollYProgress, PHONE_MAX_VH_PER_SEC / spanVh, device.small);
 
   return (
     <section ref={ref} id={id} className={`chapter ${className}`} style={{ height: `${length * 100}vh` }} data-chapter>
       <div className="chapter-stage">
-        <ProgressContext.Provider value={scrollYProgress}>{children}</ProgressContext.Provider>
+        <ProgressContext.Provider value={progress}>{children}</ProgressContext.Provider>
       </div>
       {snaps.map((p) => (
         <span key={p} className="snap" style={{ top: `${travel * p}vh` }} aria-hidden="true" />

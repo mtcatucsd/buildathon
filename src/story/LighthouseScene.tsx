@@ -2,6 +2,7 @@ import type { MotionValue } from "motion/react";
 import AsciiScene, { region, type Cell, type Frame, type Shaded } from "./AsciiScene";
 import { rng } from "./rng";
 import { stageFrame } from "./stageFrame";
+import { device } from "./device";
 
 // The Manara West lighthouse in ASCII: a slender minaret-lighthouse on a dark island at dusk,
 // horizontal beams, a glowing path winding down past lanterns, a lone figure on the hill,
@@ -44,9 +45,10 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
   const wide = w >= 900;
   const fr = stageFrame(w, h);
   const cx = w * (wide ? 0.66 : 0.5);
-  // Tall screens: the lighthouse stands in the upper area and the sea and hills fill everything below.
-  const horizon = fr.tall ? fr.top + fr.h * 0.86 : h * 0.6;
   const s = fr.tall ? Math.min(fr.h * 0.8, w * 0.9) : Math.min(h * 0.62, w * (wide ? 0.5 : 0.9)); // tower height scale
+  // Tall screens: the lighthouse stands in the upper area and the sea and hills fill everything below. The
+  // horizon sits as high as the tower allows (it's ~0.86·s tall), so the path has room to wind toward you.
+  const horizon = fr.tall ? fr.top + Math.min(fr.h * 0.86, Math.max(fr.h * 0.62, 40 + s * 0.86)) : h * 0.6;
   // Below-horizon positions given as fractions of a wide layout (0.6 = horizon … 1 = bottom).
   const hy = (k: number) => (fr.tall ? horizon + (h - horizon) * ((k - 0.6) / 0.4) : h * k);
   const fill = (id: number) => (ctx.fillStyle = region(id));
@@ -84,25 +86,37 @@ function paint(ctx: CanvasRenderingContext2D, w: number, h: number): Geo {
 
   // Winding path from the door down the island, with lantern posts.
   const doorY = base - s * 0.06;
+  // On phones the text card hides everything below `cardY`, so the path winds within the visible stretch
+  // (and runs on beneath the card) instead of spreading over a screen height that's mostly covered.
+  const cardY = fr.tall ? fr.top + fr.h + 14 : h;
+  const reach = fr.tall ? (cardY - doorY) * 1.15 : (h - doorY) * 1.05;
+  const waves = fr.tall ? 2.4 : 3.2;
+  // A grid cell is ~3–5px; a line narrower than ~2 cells loses cells to its neighbours and breaks up.
+  const cellPx = 4.8 * device.cellScale;
+  const pw = Math.max(5, s * 0.022, cellPx * 2.2);
   ctx.strokeStyle = region(R.PATH);
-  ctx.lineWidth = Math.max(5, s * 0.022);
   ctx.lineCap = "round";
   const pts: [number, number][] = [];
-  ctx.beginPath();
   for (let i = 0; i <= 40; i++) {
     const u = i / 40;
-    const x = cx + Math.sin(u * Math.PI * 3.2) * s * (0.06 + u * 0.22) - u * s * 0.15;
-    const y = doorY + u * (h - doorY) * 1.05;
-    pts.push([x, y]);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+    pts.push([
+      cx + Math.sin(u * Math.PI * waves) * s * (0.05 + u * (fr.tall ? 0.2 : 0.22)) - u * s * (fr.tall ? 0.1 : 0.15),
+      doorY + u * reach,
+    ]);
   }
-  ctx.stroke();
+  // Drawn in short pieces so it can widen toward the viewer, like a road in perspective.
+  for (let i = 0; i < 40; i++) {
+    ctx.lineWidth = pw * (1 + (i / 40) * 1.3);
+    ctx.beginPath();
+    ctx.moveTo(pts[i][0], pts[i][1]);
+    ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
+    ctx.stroke();
+  }
   fill(R.POST);
   for (const i of [9, 17, 25, 33]) {
     const [x, y] = pts[i];
     const off = (i % 2 ? 1 : -1) * s * 0.06;
-    ctx.fillRect(x + off - 1.5, y - s * 0.06, 3, s * 0.06);
+    ctx.fillRect(x + off - 1.5, y - s * 0.06, Math.max(3, cellPx), s * 0.06);
   }
 
   // A figure on the right-hand hill, looking toward the light.

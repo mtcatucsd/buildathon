@@ -57,7 +57,7 @@ function Scene() {
 
 export default function Prologue() {
   return (
-    <Chapter id="prologue" length={1} snaps={[0]} offset={["start start", "end start"]}>
+    <Chapter id="prologue" length={1} phoneTravel={45} snaps={[0]} offset={["start start", "end start"]}>
       <Scene />
     </Chapter>
   );
