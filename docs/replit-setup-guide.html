@@ -27,6 +27,11 @@ h2{font-size:34px;line-height:1.05;font-weight:500;letter-spacing:-.02em}
 .step h3{font-size:21px;font-weight:500;letter-spacing:-.01em}
 .step p{font-size:14px;line-height:1.45;color:var(--medium-gray);margin-top:3px}
 .step b{color:var(--off-black);font-weight:600}
+.share{margin-top:26px;display:flex;gap:20px;align-items:center}
+.share img{width:92px;height:92px;display:block}
+.share h3{font-size:19px;font-weight:500;letter-spacing:-.01em}
+.share p{font-size:13.5px;line-height:1.45;color:var(--medium-gray);margin-top:3px}
+.share b{color:var(--off-black);font-weight:600}
 footer{margin-top:auto;border-top:1px solid var(--silver);padding-top:14px;display:flex;justify-content:space-between;font-size:12px;color:var(--medium-gray)}
 footer span:last-child{color:var(--off-black)}
 .stat{display:flex;gap:36px;align-items:flex-end;margin-top:.35in}
@@ -45,6 +50,21 @@ footer span:last-child{color:var(--off-black)}
 .event{margin-top:14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--silver);border-bottom:1px solid var(--silver);padding:16px 0}
 .event div{font-size:13px;color:var(--medium-gray);line-height:1.5}
 .event strong{display:block;font-size:17px;font-weight:500;color:var(--off-black)}
+
+.shot{position:relative;overflow:hidden;border-radius:12px;border:1px solid var(--dark-gray);background:#1c1c1c}
+.shot img{position:absolute;display:block;max-width:none}
+.m{position:absolute;width:20px;height:20px;border-radius:5px;background:var(--orange);color:var(--off-white);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;transform:translate(-50%,-50%)}
+.tour{display:grid;grid-template-columns:230px 1fr;gap:26px;margin-top:20px;align-items:start}
+.leg{list-style:none}
+.leg li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--silver);font-size:13px;line-height:1.4;color:var(--medium-gray)}
+.leg li:first-child{border-top:1px solid var(--silver)}
+.leg .m{position:static;transform:none;flex-shrink:0;margin-top:1px}
+.leg b{color:var(--off-black);font-weight:600}
+.build{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:14px}
+.build div{border-top:2px solid var(--off-black);padding-top:9px}
+.build span{font-size:11px;color:var(--orange);font-weight:600;letter-spacing:.06em}
+.build h4{font-size:15px;font-weight:500;margin:3px 0 3px}
+.build p{font-size:12px;line-height:1.4;color:var(--medium-gray)}
 </style></head><body>
 
 <section class="page">
@@ -61,7 +81,8 @@ footer span:last-child{color:var(--off-black)}
     <div class="step"><div class="n">03</div><div><h3>Enter the promo code at checkout</h3><p>Type <b>ILOVEMTC</b> in the promo code field and apply it.</p></div></div>
     <div class="step"><div class="n">04</div><div><h3>Confirm the discount before you pay</h3><p>Check that the discount shows on your order, then add your card and complete checkout. <b>Do not skip the check.</b></p></div></div>
   </div>
-  <footer><span>Replit × MTC Buildathon</span><span>01 / 02</span></footer>
+  <div class="share"><img src="assets/qr.svg" alt="QR code"><div><h3>Share this guide</h3><p>Scan to open it on your phone, or visit<br><b>buildathon.mtcatucsd.org/replit-setup.pdf</b></p></div></div>
+  <footer><span>Replit × MTC Buildathon</span><span>01 / 04</span></footer>
 </section>
 
 <section class="page">
@@ -82,6 +103,69 @@ footer span:last-child{color:var(--off-black)}
     <div><strong>Ready to build</strong>Fri, Nov 6 · 2:30 – 7:30 PM<br>Triton Conference Room, Triton Arena, UCSD</div>
     <div style="text-align:right"><strong>Bring your laptop</strong>Log in to Replit before you arrive<br>so we can start building right away.</div>
   </div>
-  <footer><span>Questions? Ask an MTC organizer at the event.</span><span>02 / 02</span></footer>
+  <footer><span>Questions? Ask an MTC organizer at the event.</span><span>02 / 04</span></footer>
+</section>
+
+<section class="page">
+  <header><img src="assets/replit-wordmark.svg" alt="Replit"><span class="tag">Student setup guide</span></header>
+  <div class="hero" style="margin-top:.4in">
+    <div class="eyebrow"><i></i>After you're in</div>
+    <h2>A quick tour of Replit.</h2>
+    <p class="lede" style="margin-top:10px;font-size:15px">Your home screen is where everything starts. Describe what you want, and Replit's Agent builds it with you.</p>
+  </div>
+  <div style="margin-top:20px"><div class="shot" style="width:672px;height:103px"><img src="assets/replit-home.png" style="width:1551.6px;left:-534.2px;top:-327.4px"><div class="m" style="left:641.8px;top:25.8px">A</div><div class="m" style="left:33.6px;top:55.1px">B</div><div class="m" style="left:95.6px;top:55.1px">C</div><div class="m" style="left:554.0px;top:55.1px">D</div><div class="m" style="left:643.6px;top:55.1px">E</div></div></div>
+  <ul class="leg" style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;column-gap:26px">
+    <li><span class="m" style="position:static;transform:none;flex-shrink:0">A</span><span><b>Prompt box.</b> Describe what you want in plain English.</span></li>
+    <li><span class="m" style="position:static;transform:none;flex-shrink:0">B</span><span><b>Plus.</b> Add files and other context to your request.</span></li>
+    <li><span class="m" style="position:static;transform:none;flex-shrink:0">C</span><span><b>Output.</b> Choose what kind of thing you want to make.</span></li>
+    <li><span class="m" style="position:static;transform:none;flex-shrink:0">D</span><span><b>Power.</b> Pick Agent's mode: Free, Power or Max. Higher modes use more credits.</span></li>
+    <li><span class="m" style="position:static;transform:none;flex-shrink:0">E</span><span><b>Send.</b> Start the build. The mic next to it lets you speak your prompt.</span></li>
+  </ul>
+  <div class="tour">
+    <div class="shot" style="width:230px;height:228px"><img src="assets/replit-home.png" style="width:1801px;left:-5px;top:-100px"><div class="m" style="left:214px;top:19px">1</div><div class="m" style="left:214px;top:59px">2</div><div class="m" style="left:214px;top:167px">3</div><div class="m" style="left:214px;top:203px">4</div></div>
+    <ul class="leg">
+      <li><span class="m">1</span><span><b>New.</b> Start a fresh project.</span></li>
+      <li><span class="m">2</span><span><b>Import.</b> Bring an existing project into Replit.</span></li>
+      <li><span class="m">3</span><span><b>Routines.</b> Schedule recurring Agent work, like hourly, daily or weekly tasks.</span></li>
+      <li><span class="m">4</span><span><b>Integrations.</b> Connect outside tools such as Stripe, Slack, Notion and Google Workspace.</span></li>
+      <li style="border-bottom:none"><span style="width:20px;flex-shrink:0"></span><span>Library, Repos, Security and More are there too. Explore them once your first project is running.</span></li>
+    </ul>
+  </div>
+  <div class="eyebrow" style="margin:18px 0 0"><i></i>Your first build</div>
+  <div class="build">
+    <div><span>01</span><h4>Describe it</h4><p>Say who it is for and what it should do.</p></div>
+    <div><span>02</span><h4>Let Agent build</h4><p>Answer any questions it asks.</p></div>
+    <div><span>03</span><h4>Test it</h4><p>Click through the live preview.</p></div>
+    <div><span>04</span><h4>Refine</h4><p>Ask for one change at a time.</p></div>
+    <div><span>05</span><h4>Publish</h4><p>Share it once it works.</p></div>
+  </div>
+  <footer><span>Questions? Ask an MTC organizer at the event.</span><span>03 / 04</span></footer>
+</section>
+
+
+<section class="page" style="padding-top:.55in">
+  <header><img src="assets/replit-wordmark.svg" alt="Replit"><span class="tag">Student setup guide</span></header>
+  <div class="hero" style="margin-top:.28in">
+    <div class="eyebrow" style="margin-bottom:10px"><i></i>Inside a project</div>
+    <h2 style="font-size:30px">Where you'll spend the day.</h2>
+  </div>
+  <div style="margin-top:16px"><div class="shot" style="width:620px;height:420px;margin:0 auto"><img src="assets/replit-workspace.jpg" style="width:717.4px;left:-97.4px;top:0"><div class="m" style="left:142.4px;top:9.5px">A</div><div class="m" style="left:175.9px;top:149.9px">B</div><div class="m" style="left:175.9px;top:392.7px">C</div><div class="m" style="left:69.9px;top:409.7px">D</div><div class="m" style="left:269.8px;top:9.5px">E</div><div class="m" style="left:493.1px;top:9.5px">F</div></div></div>
+  <ul class="leg" style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;column-gap:26px">
+    <li><span class="m">A</span><span><b>Build and Design.</b> Build makes the app. Design explores layouts and visuals.</span></li>
+    <li><span class="m">B</span><span><b>Agent chat.</b> Your conversation with Agent. It shows what it did and why.</span></li>
+    <li><span class="m">C</span><span><b>Message Agent.</b> Ask for changes here, one request at a time.</span></li>
+    <li><span class="m">D</span><span><b>Agent mode.</b> Choose how powerful Agent is. Details below.</span></li>
+    <li><span class="m">E</span><span><b>Preview.</b> Your live app. Test it here after every change.</span></li>
+    <li><span class="m">F</span><span><b>Publish.</b> Puts your app online at a link you can share.</span></li>
+  </ul>
+  <div style="display:flex;gap:24px;margin-top:16px;align-items:center">
+    <div class="shot" style="width:246px;height:196px;flex-shrink:0"><img src="assets/replit-modes.jpg" style="width:1148.8px;left:-257.6px;top:-448.0px"></div>
+    <div>
+      <div class="eyebrow" style="margin-bottom:8px"><i></i>Choosing an Agent mode</div>
+      <p style="font-size:13px;line-height:1.5;color:var(--medium-gray)"><b style="color:var(--off-black);font-weight:600">Free.</b> Fast, lightweight models at no cost.<br><b style="color:var(--off-black);font-weight:600">Power.</b> A balance of speed and quality. Best for most builds.<br><b style="color:var(--off-black);font-weight:600">Max.</b> High-performance models for complex work.</p>
+      <p style="font-size:13px;line-height:1.5;color:var(--medium-gray);margin-top:8px">Higher modes use more credits. If you want to keep costs at zero, start in Free and check your usage before switching.</p>
+    </div>
+  </div>
+  <footer><span>Questions? Ask an MTC organizer at the event.</span><span>04 / 04</span></footer>
 </section>
 </body></html>
