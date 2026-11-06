@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Replit Core Setup Guide</title>
+<style>
+@font-face{font-family:'Diatype';src:url('assets/diatype-variable.woff2') format('woff2');font-weight:100 900}
+:root{--orange:#FF3C00;--off-white:#FAF6F1;--off-black:#191818;--dark-gray:#312E2E;--medium-gray:#767270;--silver:#C5C5C5;--light-gray:#EDEDED;--card:#F5F3F0}
+@page{size:8.5in 11in;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Diatype',Arial,sans-serif;color:var(--off-black);background:var(--off-white);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:8.5in;height:11in;padding:.7in .75in .55in;display:flex;flex-direction:column;page-break-after:always;overflow:hidden}
+.page:last-child{page-break-after:auto}
+header{display:flex;justify-content:space-between;align-items:center}
+header img{height:30px}
+.tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--medium-gray)}
+.eyebrow{display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--medium-gray);margin-bottom:14px}
+.eyebrow i{width:11px;height:11px;background:var(--orange);display:block}
+h1{font-size:56px;line-height:1;font-weight:500;letter-spacing:-.025em}
+h2{font-size:34px;line-height:1.05;font-weight:500;letter-spacing:-.02em}
+.lede{font-size:17px;line-height:1.45;color:var(--medium-gray);margin-top:16px;max-width:5.6in}
+.hero{margin-top:.55in}
+.code{margin-top:26px;display:flex;align-items:stretch;border:1.5px solid var(--off-black);border-radius:10px;overflow:hidden}
+.code .l{padding:16px 20px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--medium-gray);display:flex;align-items:center;border-right:1.5px solid var(--off-black)}
+.code .v{flex:1;padding:12px 22px;font-size:40px;font-weight:600;letter-spacing:.06em;color:var(--orange)}
+.code .r{padding:16px 20px;background:var(--off-black);color:var(--off-white);font-size:13px;line-height:1.35;display:flex;align-items:center}
+.steps{margin-top:.4in;border-top:1px solid var(--silver)}
+.step{display:flex;gap:22px;padding:15px 0;border-bottom:1px solid var(--silver);align-items:flex-start}
+.step .n{flex-shrink:0;font-size:13px;color:var(--orange);font-weight:600;width:26px;padding-top:4px;letter-spacing:.04em}
+.step h3{font-size:21px;font-weight:500;letter-spacing:-.01em}
+.step p{font-size:14px;line-height:1.45;color:var(--medium-gray);margin-top:3px}
+.step b{color:var(--off-black);font-weight:600}
+footer{margin-top:auto;border-top:1px solid var(--silver);padding-top:14px;display:flex;justify-content:space-between;font-size:12px;color:var(--medium-gray)}
+footer span:last-child{color:var(--off-black)}
+.stat{display:flex;gap:36px;align-items:flex-end;margin-top:.35in}
+.stat .big{font-size:112px;line-height:.85;font-weight:500;letter-spacing:-.04em;color:var(--orange)}
+.stat p{font-size:15px;line-height:1.45;color:var(--medium-gray);padding-bottom:6px}
+.stat p strong{color:var(--off-black);font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:.3in}
+.card{background:var(--card);border:1px solid var(--light-gray);border-radius:12px;padding:18px 20px}
+.card .k{display:flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--medium-gray);margin-bottom:8px}
+.card .k i{width:9px;height:9px;background:var(--orange)}
+.card h4{font-size:18px;font-weight:500;letter-spacing:-.01em;margin-bottom:4px}
+.card p{font-size:13.5px;line-height:1.45;color:var(--medium-gray)}
+.warn{margin-top:14px;background:var(--off-black);color:var(--off-white);border-radius:12px;padding:20px 24px;display:flex;gap:18px}
+.warn .k{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--orange);white-space:nowrap;padding-top:3px}
+.warn p{font-size:14px;line-height:1.5;color:var(--light-gray)}
+.event{margin-top:14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--silver);border-bottom:1px solid var(--silver);padding:16px 0}
+.event div{font-size:13px;color:var(--medium-gray);line-height:1.5}
+.event strong{display:block;font-size:17px;font-weight:500;color:var(--off-black)}
+</style></head><body>
+
+<section class="page">
+  <header><img src="assets/replit-wordmark.svg" alt="Replit"><span class="tag">MTC × Replit × Manara West</span></header>
+  <div class="hero">
+    <div class="eyebrow"><i></i>Student setup guide</div>
+    <h1>Get 30 days of<br>Replit Core.</h1>
+    <p class="lede">Set up your account, redeem your student code, and be ready to build before the Buildathon starts. It takes about five minutes.</p>
+    <div class="code"><div class="l">Promo code</div><div class="v">ILOVEMTC</div><div class="r">First 60<br>students</div></div>
+  </div>
+  <div class="steps">
+    <div class="step"><div class="n">01</div><div><h3>Create or log in to your Replit account</h3><p>Go to <b>replit.com</b> and sign up, or log in if you already have an account.</p></div></div>
+    <div class="step"><div class="n">02</div><div><h3>Select the Replit Core plan</h3><p>Open the plans page and choose <b>Core</b>.</p></div></div>
+    <div class="step"><div class="n">03</div><div><h3>Enter the promo code at checkout</h3><p>Type <b>ILOVEMTC</b> in the promo code field and apply it.</p></div></div>
+    <div class="step"><div class="n">04</div><div><h3>Confirm the discount before you pay</h3><p>Check that the discount shows on your order, then add your card and complete checkout. <b>Do not skip the check.</b></p></div></div>
+  </div>
+  <footer><span>Replit × MTC Buildathon</span><span>01 / 02</span></footer>
+</section>
+
+<section class="page">
+  <header><img src="assets/replit-wordmark.svg" alt="Replit"><span class="tag">Student setup guide</span></header>
+  <div class="hero" style="margin-top:.45in">
+    <div class="eyebrow"><i></i>Before you check out</div>
+    <h2>A card is required.<br>Here is how to avoid surprise charges.</h2>
+  </div>
+  <div class="stat"><div class="big">30</div><p><strong>days of Replit Core</strong> once you redeem the code.<br>After that it is a subscription and renews unless you cancel.</p></div>
+  <div class="grid">
+    <div class="card"><div class="k"><i></i>Card</div><h4>Credit or debit card</h4><p>You need a valid card to activate Core, even with the promo code applied.</p></div>
+    <div class="card"><div class="k"><i></i>Cancel</div><h4>Cancel before renewal</h4><p>Core is a subscription. If you do not want to continue after 30 days, cancel before it renews. Set a reminder on day 25.</p></div>
+    <div class="card"><div class="k"><i></i>Limits</div><h4>Set a spending limit</h4><p>In your account's usage and billing settings, set a spending limit so usage cannot run past what you expect.</p></div>
+    <div class="card"><div class="k"><i></i>Usage</div><h4>Turn off Auto Reload</h4><p>Auto Reload tops up your balance automatically. Turn it off, and check your usage regularly while you build.</p></div>
+  </div>
+  <div class="warn"><div class="k">Important</div><p>Replit is not responsible for additional usage charges. You are in control of your plan, your limits, and your cancellation.</p></div>
+  <div class="event">
+    <div><strong>Ready to build</strong>Fri, Nov 6 · 2:30 – 7:30 PM<br>Triton Conference Room, Triton Arena, UCSD</div>
+    <div style="text-align:right"><strong>Bring your laptop</strong>Log in to Replit before you arrive<br>so we can start building right away.</div>
+  </div>
+  <footer><span>Questions? Ask an MTC organizer at the event.</span><span>02 / 02</span></footer>
+</section>
+</body></html>

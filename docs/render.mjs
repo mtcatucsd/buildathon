@@ -1,0 +1,10 @@
+import { chromium } from "/Users/zahir/buildathon/node_modules/playwright/index.mjs";
+import { pathToFileURL } from "node:url";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport:{width:816,height:1056}, deviceScaleFactor:2 });
+await p.goto(pathToFileURL("/Users/zahir/buildathon/docs/replit-setup-guide.html").href,{waitUntil:"networkidle"});
+await p.evaluate(()=>document.fonts.ready);
+await p.pdf({path:"/Users/zahir/buildathon/docs/Replit-Core-Student-Setup-Guide.pdf",width:"8.5in",height:"11in",printBackground:true});
+const pages = await p.$$(".page");
+for (let i=0;i<pages.length;i++) await pages[i].screenshot({path:`/private/tmp/claude-501/-Users-zahir-buildathon/5c0d2944-7bb0-4fcb-b750-6a5b0c7a799a/scratchpad/p${i+1}.png`});
+await b.close();
